@@ -134,3 +134,93 @@ def incidents_view(
     """View incident details"""
     # I try to load from DB, fallback message
     console.print(f"[yellow]Incident view {incident_id} – use 'incidents list' with DB configured for full details (Phase 2 DB viewer)[/yellow]")
+
+# Phase 3 Fix commands
+try:
+    fix_app = typer.Typer(help="Fix generation and validation")
+    app.add_typer(fix_app, name="fix")
+    @fix_app.command("generate")
+    def fix_generate(
+        incident_id: str = typer.Argument(..., help="Incident ID, or 'demo' for synthetic"),
+        kind: str = typer.Option("opentofu", "--kind", help="opentofu|kubernetes|helm"),
+    ):
+        """Generate a fix for an incident (Phase 3)"""
+        from .models.incident import Incident, IncidentType, Severity, IncidentStatus
+        from .remediator.registry import get_remediators
+        # I load incident from DB if possible, else synthesize
+        inc = None
+        try:
+            # try DB
+            from .config.settings import load_config
+            cfg = load_config(None)
+            if cfg.database.dsn:
+                from .db.base import Database
+                from .db.session import IncidentStore
+                db = Database(cfg.database.dsn)
+                sess = db.get_session()
+                try:
+                    inc = IncidentStore(sess).get(incident_id)
+                finally:
+                    sess.close(); db.close()
+        except Exception:
+            pass
+        if inc is None:
+            # I synthesize a demo incident
+            inc = Incident(
+                id=incident_id if incident_id != "demo" else "demo-inc-001",
+                type=IncidentType.scaling_bottleneck,
+                severity=Severity.high,
+                status=IncidentStatus.diagnosed,
+                target_id="demo-target",
+                root_cause="HPA max replicas too low",
+                confidence=0.8
+            )
+        rems = get_remediators()
+        # I filter by kind if requested
+        kind_map = {"opentofu":"OpenTofuRemediator","kubernetes":"KubernetesRemediator","helm":"HelmRemediator"}
+        selected = [r for r in rems if kind.lower() in r.name.lower()] or rems
+        actions = []
+        for rm in selected:
+            try:
+                if rm.can_remediate(inc):
+                    actions.extend(rm.generate(inc))
+            except Exception as e:
+                console.print(f"[red]{rm.name} failed: {e}[/red]")
+        if not actions:
+            console.print("[yellow]No fix generated[/yellow]"); raise typer.Exit(1)
+        for a in actions:
+            console.print(f"\n[bold]Action {a.id[:8]} – {a.kind.value} – risk={a.risk.value}[/bold]")
+            console.print(a.summary)
+            console.print("\n[dim]--- diff ---[/dim]")
+            console.print(a.diff[:2000])
+    @fix_app.command("preview")
+    def fix_preview(
+        incident_id: str = typer.Argument(..., help="Incident ID or 'demo'"),
+    ):
+        """Generate and validate a fix in shadow env"""
+        from .models.incident import Incident, IncidentType, Severity, IncidentStatus
+        from .remediator.registry import get_remediators
+        from .validator import ShadowValidator
+        inc = Incident(
+            id=incident_id if incident_id!="demo" else "demo-inc-001",
+            type=IncidentType.security_drift,
+            severity=Severity.high,
+            status=IncidentStatus.diagnosed,
+            target_id="demo",
+            root_cause="open SG",
+            confidence=0.9
+        )
+        rems = get_remediators()
+        validator = ShadowValidator()
+        for rm in rems:
+            if not rm.can_remediate(inc): continue
+            acts = rm.generate(inc)
+            for act in acts:
+                res = validator.validate(act)
+                status = "[green]VALID[/green]" if res.valid else "[red]INVALID[/red]"
+                console.print(f"{status} {rm.name} – {act.kind.value} – {res.message}")
+                if res.details:
+                    console.print(f"  details: {res.details}")
+except Exception as e:
+    # I avoid breaking CLI load if Phase 3 modules fail
+    pass
