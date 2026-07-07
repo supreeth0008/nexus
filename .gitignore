@@ -1,7 +1,25 @@
 # Build artifacts
-/nexus
+/nexus-bin
+/nexus.exe
 coverage.out
 dist/
+build/
+*.egg-info/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+pip-wheel-metadata/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
 
 # Local configuration and secrets
 nexus.yaml
