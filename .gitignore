@@ -1,0 +1,15 @@
+# Build artifacts
+/nexus
+coverage.out
+dist/
+
+# Local configuration and secrets
+nexus.yaml
+*.env
+*.age
+
+# Editor and OS files
+.idea/
+.vscode/
+*.swp
+.DS_Store

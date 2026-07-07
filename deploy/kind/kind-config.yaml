@@ -1,0 +1,20 @@
+# Kind cluster configuration for local Nexus development.
+# One control-plane node is enough for Phase 0 and 1. Port mappings
+# expose the Nexus API (8080), Prometheus (9090), and Grafana (3000)
+# on localhost.
+
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: nexus-dev
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30080   # Nexus API (NodePort)
+        hostPort: 8080
+        protocol: TCP
+      - containerPort: 30090   # Prometheus (NodePort)
+        hostPort: 9090
+        protocol: TCP
+      - containerPort: 30030   # Grafana (NodePort)
+        hostPort: 3000
+        protocol: TCP
