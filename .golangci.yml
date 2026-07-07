@@ -1,33 +1,24 @@
-# golangci-lint configuration for Nexus.
+# golangci-lint v2 configuration for Nexus.
 # I keep the linter set strict but pragmatic: correctness and clarity
-# linters on, style bikeshedding off.
+# linters on, style bikeshedding off. The standard default set already
+# includes errcheck, govet, ineffassign, staticcheck, and unused.
+
+version: "2"
 
 run:
   timeout: 5m
 
 linters:
+  default: standard
   enable:
-    - errcheck
-    - govet
-    - staticcheck
-    - unused
-    - ineffassign
-    - gosimple
     - misspell
     - unconvert
     - gocritic
     - revive
-
-linters-settings:
-  revive:
+  exclusions:
     rules:
-      - name: exported
-        severity: warning
-
-issues:
-  exclude-rules:
-    # Test files may ignore some strictness for readability.
-    - path: _test\.go
-      linters:
-        - errcheck
-        - gocritic
+      # Test files may ignore some strictness for readability.
+      - path: _test\.go
+        linters:
+          - errcheck
+          - gocritic
