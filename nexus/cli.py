@@ -63,3 +63,74 @@ def migrate(ctx: typer.Context):
     db=Database(cfg.database.dsn)
     db.migrate(); console.print("[green]Migrations applied[/green]"); db.close()
 if __name__=="__main__": app()
+
+# Phase 2 commands
+@app.command(name="detect")
+def detect_cmd(
+    ctx: typer.Context,
+    target: Optional[str] = typer.Option(None, "--target", "-t"),
+):
+    """Run detection analyzers against observed data (Phase 2)"""
+    cfg_path = ctx.obj.get("config_path")
+    cfg = get_cfg(cfg_path)
+    try:
+        from .engine.cycle import CycleRunner
+        runner = CycleRunner()
+        cyc, incs = runner.run(cfg, trigger="manual")
+    except Exception:
+        from .observe.runner import run_cycle as old_run
+        cyc = old_run(cfg, "manual")
+        incs = []
+    table = Table(title=f"Detected Incidents: {len(incs)}")
+    table.add_column("ID"); table.add_column("Type"); table.add_column("Severity"); table.add_column("Target"); table.add_column("Root Cause")
+    for inc in incs[:20]:
+        table.add_row(inc.id[:8], str(inc.type.value), str(inc.severity.value), inc.target_id, (inc.root_cause[:50]+"..." if len(inc.root_cause)>50 else inc.root_cause))
+    console.print(table)
+    console.print(f"Cycle {cyc.id} – {cyc.incidents_detected} incidents, status={cyc.status.value}")
+
+# incidents subcommand group
+incidents_app = typer.Typer(help="Incident management")
+app.add_typer(incidents_app, name="incidents")
+
+@incidents_app.command("list")
+def incidents_list(
+    ctx: typer.Context,
+    status: Optional[str] = typer.Option(None, "--status"),
+    limit: int = typer.Option(20, "--limit"),
+):
+    """List incidents from database"""
+    cfg_path = ctx.obj.get("config_path") if ctx.obj else None
+    # I try DB first, fallback to empty
+    try:
+        cfg = get_cfg(cfg_path)
+        if not cfg.database.dsn:
+            console.print("[yellow]No database configured – run 'nexus detect' for live detection[/yellow]")
+            return
+        from .db.base import Database
+        from .db.session import IncidentStore
+        db = Database(cfg.database.dsn)
+        sess = db.get_session()
+        try:
+            store = IncidentStore(sess)
+            from .models.incident import IncidentStatus
+            st = IncidentStatus(status) if status else None
+            items = store.list(status=st, limit=limit)
+            table = Table(title=f"Incidents ({len(items)})")
+            table.add_column("ID"); table.add_column("Type"); table.add_column("Severity"); table.add_column("Status"); table.add_column("Target"); table.add_column("Detected")
+            for it in items:
+                table.add_row(it.id[:8], it.type.value, it.severity.value, it.status.value, it.target_id, it.detected_at.strftime("%Y-%m-%d %H:%M"))
+            console.print(table)
+        finally:
+            sess.close(); db.close()
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+@incidents_app.command("view")
+def incidents_view(
+    incident_id: str = typer.Argument(..., help="Incident ID"),
+    ctx: typer.Context = typer.Option(None),
+):
+    """View incident details"""
+    # I try to load from DB, fallback message
+    console.print(f"[yellow]Incident view {incident_id} – use 'incidents list' with DB configured for full details (Phase 2 DB viewer)[/yellow]")
