@@ -224,3 +224,48 @@ try:
 except Exception as e:
     # I avoid breaking CLI load if Phase 3 modules fail
     pass
+
+# Phase 4 full closed loop
+try:
+    run_app = typer.Typer(help="Run closed-loop cycles")
+    @app.command("run")
+    def run_cmd(
+        ctx: typer.Context,
+        autonomy: int = typer.Option(None, "--autonomy", "-a", help="override autonomy level 0-4"),
+        trigger: str = typer.Option("manual", "--trigger"),
+    ):
+        """Execute a full autonomous closed-loop cycle (Phase 4)"""
+        cfg_path = ctx.obj.get("config_path") if ctx.obj else None
+        cfg = get_cfg(cfg_path)
+        if autonomy is not None:
+            cfg.autonomy.level = autonomy
+        console.print(f"[bold]Nexus Full Loop – autonomy L{cfg.autonomy.level} ({cfg.autonomy.level_name()})[/bold]")
+        try:
+            from .engine.full_loop import FullLoopEngine
+            engine = FullLoopEngine(autonomy_level=cfg.autonomy.level)
+            cyc, incs = engine.run(cfg)
+        except Exception as e:
+            console.print(f"[red]Full loop failed, falling back: {e}[/red]")
+            from .engine.cycle import run_cycle as simple_run
+            cyc = simple_run(cfg, trigger)
+            incs = []
+        # I print results
+        table = Table(title=f"Cycle {cyc.id[:8]} – {cyc.status.value}")
+        table.add_column("Metric"); table.add_column("Value")
+        table.add_row("Incidents detected", str(cyc.incidents_detected))
+        table.add_row("Fixes applied", str(cyc.fixes_applied))
+        table.add_row("Errors", str(len(cyc.errors)))
+        table.add_row("Autonomy", f"L{cfg.autonomy.level}")
+        console.print(table)
+        if incs:
+            it = Table(title="Incidents")
+            it.add_column("ID"); it.add_column("Type"); it.add_column("Severity"); it.add_column("Status"); it.add_column("Root Cause")
+            for inc in incs:
+                it.add_row(inc.id[:8], inc.type.value, inc.severity.value, inc.status.value, inc.root_cause[:50])
+            console.print(it)
+        if cyc.errors:
+            console.print("[yellow]Errors:[/yellow]")
+            for err in cyc.errors: console.print(f"  - {err}")
+        console.print(f"\n[green]Cycle completed in {(cyc.completed_at - cyc.started_at).total_seconds():.1f}s – {cyc.fixes_applied}/{cyc.incidents_detected} auto-resolved[/green]")
+except Exception as e:
+    pass
