@@ -1,0 +1,5 @@
+# I migrated release automation to Python – kept as historical reference
+# Release: python -m build && twine upload
+# Docker: docker build -t ghcr.io/supreeth0008/nexus:v0.6.0 .
+version: 2
+# legacy – see pyproject.toml
