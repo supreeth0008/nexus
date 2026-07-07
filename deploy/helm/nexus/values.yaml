@@ -1,0 +1,60 @@
+# I configure Nexus Helm deployment – values I use in production
+replicaCount: 2
+image:
+  repository: ghcr.io/supreeth0008/nexus
+  pullPolicy: IfNotPresent
+  tag: "0.6.1"
+service:
+  type: ClusterIP
+  port: 8080
+autonomy:
+  level: 2  # I recommend starting at 1, promote to 2 after trust period
+config:
+  project:
+    name: "nexus-prod"
+    environment: "prod"
+  engine:
+    cycle_interval: "5m"
+    http_port: 8080
+postgresql:
+  enabled: true
+  auth:
+    username: nexus
+    database: nexus
+    # I set password via: kubectl create secret generic nexus-db --from-literal=password=...
+rbac:
+  create: true
+  # I grant: get,list,watch pods,deployments,hpa,events; I deny secrets
+serviceAccount:
+  create: true
+  name: "nexus"
+ingress:
+  enabled: false
+  # I terminate TLS at ingress – set className: nginx, annotations, hosts, tls
+monitoring:
+  serviceMonitor:
+    enabled: true
+    # I scrape /v1/metrics every 30s
+resources:
+  requests:
+    cpu: "250m"
+    memory: "256Mi"
+  limits:
+    cpu: "1000m"
+    memory: "1Gi"
+# I secure API:
+env:
+  - name: NEXUS_ENV
+    value: "prod"
+  # - name: NEXUS_API_KEY
+  #   valueFrom: { secretKeyRef: { name: nexus-api, key: api-key } }
+  # - name: NEXUS_AUDIT_HMAC_KEY
+  #   valueFrom: { secretKeyRef: { name: nexus-audit, key: hmac } }
+# I document securityContext:
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]

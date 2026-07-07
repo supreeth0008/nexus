@@ -1,0 +1,12 @@
+apiVersion: v2
+name: nexus
+description: I deploy Nexus – autonomous infrastructure control plane
+type: application
+version: 0.6.1
+appVersion: "0.6.1"
+home: https://github.com/supreeth0008/nexus
+sources:
+  - https://github.com/supreeth0008/nexus
+maintainers:
+  - name: Supreeth Bhat
+    email: supreeth0008@users.noreply.github.com

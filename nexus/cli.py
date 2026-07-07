@@ -342,3 +342,28 @@ try:
         console.print(rb)
 except Exception as e:
     pass
+
+# I add a production API serve command – Phase 6 hardening
+@app.command("serve")
+def serve_api(
+    ctx: typer.Context,
+    host: str = typer.Option("0.0.0.0", "--host", help="bind host"),
+    port: int = typer.Option(None, "--port", "-p", help="override http port"),
+    reload: bool = typer.Option(False, "--reload", help="dev auto-reload"),
+):
+    """Start the Nexus HTTP API server (FastAPI + Uvicorn)"""
+    cfg_path = ctx.obj.get("config_path") if ctx.obj else None
+    try:
+        cfg = get_cfg(cfg_path)
+        p = port or cfg.engine.http_port
+    except Exception:
+        p = port or 8080
+    try:
+        from .api.serve import run_api
+        run_api(host=host, port=p, reload=reload)
+    except SystemExit:
+        raise
+    except Exception as e:
+        console.print(f"[red]I failed to start API server: {e}[/red]")
+        console.print("[yellow]Install: pip install fastapi uvicorn[/yellow]")
+        raise typer.Exit(1)
