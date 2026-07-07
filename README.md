@@ -82,4 +82,4 @@ The full architecture and phase plan are documented in the project handover docu
 
 ## License
 
-Apache 2.0 (planned).
+Apache 2.0. See the LICENSE file.
