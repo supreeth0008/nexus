@@ -93,7 +93,7 @@ func (s *IncidentStore) List(ctx context.Context, status model.IncidentStatus, l
 	if err != nil {
 		return nil, fmt.Errorf("listing incidents: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var out []*model.Incident
 	for rows.Next() {

@@ -30,6 +30,7 @@ type Cycle struct {
 // CycleTrigger records what started a cycle.
 type CycleTrigger string
 
+// Cycle trigger values.
 const (
 	TriggerScheduled CycleTrigger = "scheduled"
 	TriggerEvent     CycleTrigger = "event"
@@ -39,6 +40,7 @@ const (
 // CycleStatus reflects the overall state of a cycle run.
 type CycleStatus string
 
+// Cycle status values.
 const (
 	CycleRunning   CycleStatus = "running"
 	CycleCompleted CycleStatus = "completed"

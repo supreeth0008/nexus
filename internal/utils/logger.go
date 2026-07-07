@@ -1,3 +1,5 @@
+// Package utils provides shared helpers used across Nexus: structured
+// logging setup, retry with exponential backoff, and build metadata.
 package utils
 
 import (

@@ -70,7 +70,7 @@ func (s *CycleStore) List(ctx context.Context, limit int) ([]*model.Cycle, error
 	if err != nil {
 		return nil, fmt.Errorf("listing cycles: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var out []*model.Cycle
 	for rows.Next() {

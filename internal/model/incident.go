@@ -52,6 +52,7 @@ type Incident struct {
 // IncidentType classifies what kind of problem was detected.
 type IncidentType string
 
+// Incident type values recognised by the analyzers.
 const (
 	IncidentCostSpike       IncidentType = "cost_spike"
 	IncidentPerformance     IncidentType = "performance_degradation"
@@ -68,6 +69,7 @@ const (
 // Severity ranks how urgent an incident is.
 type Severity string
 
+// Severity values ordered from most to least urgent.
 const (
 	SeverityCritical Severity = "critical"
 	SeverityHigh     Severity = "high"
@@ -79,6 +81,7 @@ const (
 // IncidentStatus tracks progress through the closed loop.
 type IncidentStatus string
 
+// Incident status values covering the closed-loop lifecycle.
 const (
 	StatusDetected   IncidentStatus = "detected"
 	StatusDiagnosing IncidentStatus = "diagnosing"

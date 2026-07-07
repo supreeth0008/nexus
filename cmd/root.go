@@ -39,7 +39,7 @@ This build covers Phase 0: CLI scaffolding, configuration loading,
 structured logging, data models, and the database layer.`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+	PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
 		utils.InitLogger(logLevel, logFormat)
 
 		loaded, err := config.Load(cfgFile)

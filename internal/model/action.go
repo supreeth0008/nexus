@@ -19,6 +19,7 @@ type Action struct {
 // ActionKind identifies the remediation mechanism.
 type ActionKind string
 
+// Action kind values.
 const (
 	ActionOpenTofu ActionKind = "opentofu"
 	ActionK8s      ActionKind = "kubernetes"
@@ -28,6 +29,7 @@ const (
 // ActionRisk classifies blast radius; policy gates key off this.
 type ActionRisk string
 
+// Action risk values.
 const (
 	RiskLow    ActionRisk = "low"
 	RiskMedium ActionRisk = "medium"
@@ -37,6 +39,7 @@ const (
 // ActionStatus tracks the lifecycle of a remediation action.
 type ActionStatus string
 
+// Action status values.
 const (
 	ActionProposed   ActionStatus = "proposed"
 	ActionValidated  ActionStatus = "validated"

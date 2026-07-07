@@ -26,6 +26,7 @@ type TargetAuth struct {
 // CloudProvider identifies the platform backing a target.
 type CloudProvider string
 
+// Cloud providers Nexus can observe.
 const (
 	ProviderAWS        CloudProvider = "aws"
 	ProviderAzure      CloudProvider = "azure"
@@ -37,6 +38,7 @@ const (
 // TargetStatus reflects connectivity health for a target.
 type TargetStatus string
 
+// Target status values.
 const (
 	TargetStatusActive      TargetStatus = "active"
 	TargetStatusUnreachable TargetStatus = "unreachable"

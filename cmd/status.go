@@ -13,7 +13,7 @@ var statusCmd = &cobra.Command{
 configuration, configured targets, and autonomy level. In Phase 0 this
 reports configuration state only; live cycle health arrives with the
 engine in later phases.`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		fmt.Printf("Project:        %s\n", cfg.Project.Name)
 		fmt.Printf("Autonomy level: %d (%s)\n", cfg.Autonomy.Level, cfg.Autonomy.LevelName())
 		fmt.Printf("Database:       %s\n", cfg.Database.RedactedDSN())

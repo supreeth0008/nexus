@@ -12,7 +12,7 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the Nexus version",
 	Long:  "Print the Nexus version, commit hash, and build date.",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		info := utils.BuildInfo()
 		fmt.Printf("Nexus %s\n", info.Version)
 		fmt.Printf("  commit:     %s\n", info.Commit)

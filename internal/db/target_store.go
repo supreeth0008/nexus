@@ -63,7 +63,7 @@ func (s *TargetStore) List(ctx context.Context) ([]*model.Target, error) {
 	if err != nil {
 		return nil, fmt.Errorf("listing targets: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var out []*model.Target
 	for rows.Next() {

@@ -17,7 +17,7 @@ var initCmd = &cobra.Command{
 	Long: `Create a nexus.yaml configuration file in the current directory
 with sensible defaults. I refuse to overwrite an existing file so a
 project configuration is never lost by accident.`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		path := "nexus.yaml"
 		if _, err := os.Stat(path); err == nil {
 			return fmt.Errorf("%s already exists; remove it first if you want to re-initialize", path)

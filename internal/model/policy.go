@@ -27,6 +27,7 @@ type PolicyScope struct {
 // PolicyDecision is the outcome of evaluating a policy gate.
 type PolicyDecision string
 
+// Policy decision values returned by the gate.
 const (
 	DecisionAllow           PolicyDecision = "allow"
 	DecisionDeny            PolicyDecision = "deny"

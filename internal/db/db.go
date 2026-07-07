@@ -46,7 +46,7 @@ func Connect(ctx context.Context, dsn string) (*DB, error) {
 	pingCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	if err := pool.PingContext(pingCtx); err != nil {
-		pool.Close()
+		_ = pool.Close()
 		return nil, fmt.Errorf("pinging database: %w", err)
 	}
 
@@ -81,7 +81,7 @@ func (d *DB) Migrate(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("reading applied migrations: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var v string
 		if err := rows.Scan(&v); err != nil {
@@ -116,11 +116,11 @@ func (d *DB) Migrate(ctx context.Context) error {
 		}
 
 		if _, err := tx.ExecContext(ctx, string(content)); err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return fmt.Errorf("applying migration %s: %w", version, err)
 		}
 		if _, err := tx.ExecContext(ctx, `INSERT INTO schema_migrations (version) VALUES ($1)`, version); err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return fmt.Errorf("recording migration %s: %w", version, err)
 		}
 		if err := tx.Commit(); err != nil {
