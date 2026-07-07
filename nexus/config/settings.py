@@ -22,7 +22,7 @@ class Settings(BaseModel):
     database: DatabaseConfig=Field(default_factory=DatabaseConfig)
     engine: EngineConfig=Field(default_factory=EngineConfig)
     targets: List[TargetConfig]=Field(default_factory=list)
-VALID_PROVIDERS={"aws","azure","gcp","kubernetes","localstack"}
+VALID_PROVIDERS={"aws","azure","gcp","kubernetes","localstack","prometheus"}
 def validate_settings(s: Settings) -> None:
     if not s.project.name: raise ValueError("project.name must not be empty")
     if not (0 <= s.autonomy.level <= 4): raise ValueError("autonomy.level must be 0-4")
