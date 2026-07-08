@@ -1,12 +1,14 @@
-from typing import List
+
+from ..models.incident import Incident, IncidentStatus, IncidentType, Severity
+from ..observe.models import ObserveResult
 from .base import Analyzer
 from .registry import register
-from ..observe.models import ObserveResult
-from ..models.incident import Incident, IncidentType, Severity, IncidentStatus
+
+
 @register("cost")
 class CostAnalyzer(Analyzer):
     name="cost"
-    def analyze(self, result: ObserveResult) -> List[Incident]:
+    def analyze(self, result: ObserveResult) -> list[Incident]:
         incidents=[]
         # Look for cost-related signals
         for s in result.signals:

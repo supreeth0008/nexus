@@ -1,11 +1,13 @@
 # I create GitHub PRs for Nexus fixes – MVP simulates PR creation locally
-import uuid, datetime
-from typing import Dict, Any
+import datetime
+from typing import Any
+
+
 class GitHubClient:
     def __init__(self, token: str = "", repo: str = ""):
         self.token = token
         self.repo = repo
-    def create_pr(self, branch: str, title: str, body: str, base: str="main") -> Dict[str, Any]:
+    def create_pr(self, branch: str, title: str, body: str, base: str="main") -> dict[str, Any]:
         # I simulate PR creation – in production I would call GitHub API
         pr_number = 100 + (abs(hash(branch)) % 900)
         pr_url = f"https://github.com/{self.repo or 'supreeth0008/nexus'}/pull/{pr_number}"

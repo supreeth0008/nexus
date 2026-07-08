@@ -1,10 +1,14 @@
 from __future__ import annotations
+
 from datetime import datetime
-from enum import Enum
-from typing import Any, Dict, List, Optional
+from enum import StrEnum
+from typing import Any
 from uuid import uuid4
+
 from pydantic import BaseModel, Field
-class IncidentType(str, Enum):
+
+
+class IncidentType(StrEnum):
     cost_spike = "cost_spike"
     performance_degradation = "performance_degradation"
     security_drift = "security_drift"
@@ -15,11 +19,11 @@ class IncidentType(str, Enum):
     resource_exhaustion = "resource_exhaustion"
     error_burst = "error_burst"
     custom = "custom"
-class Severity(str, Enum):
+class Severity(StrEnum):
     critical = "critical"; high = "high"; medium = "medium"; low = "low"; info = "info"
-class IncidentStatus(str, Enum):
+class IncidentStatus(StrEnum):
     detected = "detected"; diagnosing = "diagnosing"; diagnosed = "diagnosed"; fixing = "fixing"; fix_ready = "fix_ready"; applying = "applying"; verifying = "verifying"; resolved = "resolved"; failed = "failed"; escalated = "escalated"
-VALID_TRANSITIONS: Dict[IncidentStatus, List[IncidentStatus]] = {
+VALID_TRANSITIONS: dict[IncidentStatus, list[IncidentStatus]] = {
     IncidentStatus.detected: [IncidentStatus.diagnosing, IncidentStatus.failed, IncidentStatus.escalated],
     IncidentStatus.diagnosing: [IncidentStatus.diagnosed, IncidentStatus.failed, IncidentStatus.escalated],
     IncidentStatus.diagnosed: [IncidentStatus.fixing, IncidentStatus.failed, IncidentStatus.escalated],
@@ -40,21 +44,21 @@ class Incident(BaseModel):
     target_id: str = ""
     source_signal: str = ""
     detected_at: datetime = Field(default_factory=datetime.utcnow)
-    diagnosed_at: Optional[datetime] = None
-    fixed_at: Optional[datetime] = None
-    verified_at: Optional[datetime] = None
-    resolved_at: Optional[datetime] = None
+    diagnosed_at: datetime | None = None
+    fixed_at: datetime | None = None
+    verified_at: datetime | None = None
+    resolved_at: datetime | None = None
     root_cause: str = ""
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     fix_generated: bool = False
     fix_pr_url: str = ""
     fix_branch: str = ""
     fix_summary: str = ""
-    verified: Optional[bool] = None
+    verified: bool | None = None
     mttr_seconds: int = 0
     cycle_id: str = ""
-    log: List[Dict[str, Any]] = Field(default_factory=list)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    log: list[dict[str, Any]] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)
     def can_transition(self, to: IncidentStatus) -> bool:
         return to in VALID_TRANSITIONS.get(self.status, [])
     def transition(self, to: IncidentStatus) -> None:

@@ -1,9 +1,12 @@
-from typing import Dict, Any
-from ..models.incident import Incident
+from typing import Any
+
 from ..models.action import Action
+from ..models.incident import Incident
+
+
 # I evaluate OPA-style policies – MVP is a Python rules engine mimicking Rego
 class OPAClient:
-    def evaluate(self, incident: Incident, action: Action, autonomy_level: int) -> Dict[str, Any]:
+    def evaluate(self, incident: Incident, action: Action, autonomy_level: int) -> dict[str, Any]:
         # I implement progressive autonomy gates
         # Level 0: always deny
         # Level 1: require_approval

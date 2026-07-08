@@ -1,16 +1,18 @@
 from datetime import datetime
-from typing import List
+
+from ..analyzer.registry import get_analyzers
 from ..config.settings import Settings
+from ..diagnosis.engine import DiagnosisEngine
 from ..models.cycle import Cycle, CycleStatus
 from ..models.incident import Incident
 from ..observe.runner import observe_all
-from ..analyzer.registry import get_analyzers
-from ..diagnosis.engine import DiagnosisEngine
+
+
 # I run one full observe -> detect -> diagnose cycle
 class CycleRunner:
     def __init__(self):
         self.diagnoser = DiagnosisEngine()
-    def run(self, cfg: Settings, trigger: str="manual") -> tuple[Cycle, List[Incident]]:
+    def run(self, cfg: Settings, trigger: str="manual") -> tuple[Cycle, list[Incident]]:
         from ..models.cycle import CycleTrigger
         try:
             ct = CycleTrigger(trigger)
@@ -21,7 +23,7 @@ class CycleRunner:
         results = observe_all(cfg)
         cycle.detect_at = datetime.utcnow()
         # I run all registered analyzers
-        incidents: List[Incident] = []
+        incidents: list[Incident] = []
         analyzers = get_analyzers()
         for r in results:
             for a in analyzers:

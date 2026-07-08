@@ -1,6 +1,6 @@
 [project]
 name = "nexus"
-version = "0.6.0"
+version = "1.0.0"
 description = "Nexus is an autonomous infrastructure control plane"
 readme = "README.md"
 requires-python = ">=3.11"

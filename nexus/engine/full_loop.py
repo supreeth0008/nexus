@@ -1,18 +1,18 @@
 from datetime import datetime
-from typing import Tuple, List
-from ..config.settings import Settings
+
+from ..analyzer.registry import get_analyzers
+from ..audit import AuditLedger
+from ..diagnosis.engine import DiagnosisEngine
+from ..gitops.gitops import GitOpsEngine
 from ..models.cycle import Cycle, CycleStatus
 from ..models.incident import Incident, IncidentStatus
-from ..models.action import ActionStatus
 from ..observe.runner import observe_all
-from ..analyzer.registry import get_analyzers
-from ..diagnosis.engine import DiagnosisEngine
+from ..policy.gate import PolicyGate
 from ..remediator.registry import get_remediators
 from ..validator import ShadowValidator
-from ..policy.gate import PolicyGate
-from ..gitops.gitops import GitOpsEngine
 from ..verifier import Verifier
-from ..audit import AuditLedger
+
+
 # I run the full closed loop: Observe → Detect → Diagnose → Generate → Validate → Apply → Verify → Document
 class FullLoopEngine:
     def __init__(self, autonomy_level: int = 0):
@@ -23,7 +23,7 @@ class FullLoopEngine:
         self.gitops = GitOpsEngine()
         self.verifier = Verifier()
         self.audit = AuditLedger()
-    def run(self, cfg) -> Tuple[Cycle, List[Incident]]:
+    def run(self, cfg) -> tuple[Cycle, list[Incident]]:
         from ..models.cycle import CycleTrigger
         autonomy = cfg.autonomy.level if hasattr(cfg, "autonomy") else self.autonomy_level
         cycle = Cycle(trigger=CycleTrigger.manual, status=CycleStatus.running)

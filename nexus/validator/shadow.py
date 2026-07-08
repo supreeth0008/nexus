@@ -1,6 +1,12 @@
-import tempfile, os, subprocess, shutil
-from .base import Validator, ValidationResult
+import os
+import shutil
+import subprocess
+import tempfile
+
 from ..models.action import Action, ActionKind
+from .base import ValidationResult, Validator
+
+
 # I validate fixes in an isolated shadow environment
 class ShadowValidator(Validator):
     def validate(self, action: Action) -> ValidationResult:
@@ -33,7 +39,7 @@ class ShadowValidator(Validator):
                     # I fallback to heuristic: check for dangerous patterns
                     dangerous = ["0.0.0.0/0", "delete", "destroy", "password", "secret"]
                     content = (action.diff or "").lower()
-                    found = [d for d in dangerous if d in content and "remove" not in content and "fix" in content or d=="0.0.0.0/0" and d in content]
+                    [d for d in dangerous if d in content and "remove" not in content and "fix" in content or d=="0.0.0.0/0" and d in content]
                     # Actually allow 0.0.0.0/0 detection but we already fixed it, so:
                     if "0.0.0.0/0" in content and "10.0.0.0/8" not in content:
                         return ValidationResult(False, "Shadow validator rejected: open CIDR still present", {"found":"0.0.0.0/0"})

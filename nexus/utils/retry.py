@@ -1,6 +1,9 @@
-import time, random
+import random
+import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, TypeVar
+from typing import TypeVar
+
 T=TypeVar("T")
 @dataclass
 class RetryConfig:

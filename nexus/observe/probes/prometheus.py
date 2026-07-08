@@ -1,9 +1,13 @@
 import time
 from datetime import datetime
+
 import httpx
+
 from ...config.settings import TargetConfig
 from ..models import ObserveResult, Signal
 from .base import Probe
+
+
 class PrometheusProbe(Probe):
     name="prometheus"
     def observe(self, target: TargetConfig) -> ObserveResult:

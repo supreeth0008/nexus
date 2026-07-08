@@ -1,10 +1,13 @@
-import time, random
-from typing import Dict
-from ..models.incident import Incident
+import random
+import time
+
 from ..models.action import Action
+from ..models.incident import Incident
+
+
 # I verify post-apply recovery
 class Verifier:
-    def verify(self, incident: Incident, action: Action) -> Dict:
+    def verify(self, incident: Incident, action: Action) -> dict:
         # I simulate post-apply metric collection
         # In production I would re-query Prometheus / health endpoints
         time.sleep(0.1)  # I simulate observation delay

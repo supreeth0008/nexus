@@ -31,3 +31,8 @@ nexus.yaml
 .vscode/
 *.swp
 .DS_Store
+
+# personal notes
+JOURNAL.md
+*.journal
+

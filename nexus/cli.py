@@ -62,7 +62,6 @@ def migrate(ctx: typer.Context):
     from .db.base import Database
     db=Database(cfg.database.dsn)
     db.migrate(); console.print("[green]Migrations applied[/green]"); db.close()
-if __name__=="__main__": app()
 
 # Phase 2 commands
 @app.command(name="detect")
@@ -367,3 +366,6 @@ def serve_api(
         console.print(f"[red]I failed to start API server: {e}[/red]")
         console.print("[yellow]Install: pip install fastapi uvicorn[/yellow]")
         raise typer.Exit(1)
+
+if __name__ == "__main__":
+    app()

@@ -1,15 +1,18 @@
 from datetime import datetime
-from enum import Enum
-from typing import List
+from enum import StrEnum
 from uuid import uuid4
+
 from pydantic import BaseModel, Field
+
 from .incident import IncidentType
+
+
 class PolicyScope(BaseModel):
-    incident_types: List[IncidentType]=Field(default_factory=list)
-    targets: List[str]=Field(default_factory=list)
-    providers: List[str]=Field(default_factory=list)
+    incident_types: list[IncidentType]=Field(default_factory=list)
+    targets: list[str]=Field(default_factory=list)
+    providers: list[str]=Field(default_factory=list)
     time_window: str="always"
-class PolicyDecision(str, Enum):
+class PolicyDecision(StrEnum):
     allow="allow"; deny="deny"; require_approval="require_approval"
 class Policy(BaseModel):
     id: str=Field(default_factory=lambda: str(uuid4()))

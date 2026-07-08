@@ -1,9 +1,12 @@
 from __future__ import annotations
+
 import os
 from pathlib import Path
-from typing import List, Optional
+
 import yaml
 from pydantic import BaseModel, Field
+
+
 class ProjectConfig(BaseModel):
     name: str="nexus-project"; environment: str="dev"
 class AutonomyConfig(BaseModel):
@@ -21,7 +24,7 @@ class Settings(BaseModel):
     autonomy: AutonomyConfig=Field(default_factory=AutonomyConfig)
     database: DatabaseConfig=Field(default_factory=DatabaseConfig)
     engine: EngineConfig=Field(default_factory=EngineConfig)
-    targets: List[TargetConfig]=Field(default_factory=list)
+    targets: list[TargetConfig]=Field(default_factory=list)
 VALID_PROVIDERS={"aws","azure","gcp","kubernetes","localstack","prometheus"}
 def validate_settings(s: Settings) -> None:
     if not s.project.name: raise ValueError("project.name must not be empty")
@@ -33,7 +36,7 @@ def validate_settings(s: Settings) -> None:
         seen.add(t.name)
         if t.provider not in VALID_PROVIDERS: raise ValueError(f"unknown provider {t.provider}")
         if not t.endpoint: raise ValueError(f"targets[{i}] endpoint empty")
-def load_config(path: Optional[str]=None) -> Settings:
+def load_config(path: str | None=None) -> Settings:
     cfg_path=path or "nexus.yaml"
     data={}
     if Path(cfg_path).exists():

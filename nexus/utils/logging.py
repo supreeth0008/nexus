@@ -1,5 +1,9 @@
-import logging, sys
+import logging
+import sys
+
 import structlog
+
+
 def init_logger(level: str="info", format: str="text") -> None:
     lvl={"debug":logging.DEBUG,"info":logging.INFO,"warn":logging.WARNING,"warning":logging.WARNING,"error":logging.ERROR}.get(level.lower(),logging.INFO)
     logging.basicConfig(format="%(message)s", stream=sys.stderr, level=lvl)

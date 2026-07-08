@@ -1,7 +1,10 @@
 from __future__ import annotations
+
 from datetime import datetime
-from typing import List
+
 from ..models.incident import Incident, IncidentStatus
+
+
 # I correlate anomalies with recent changes to produce a root cause hypothesis.
 class DiagnosisEngine:
     def diagnose(self, incident: Incident, signals: list) -> Incident:

@@ -1,13 +1,14 @@
 # I expose Nexus via HTTP API – Phase 5/6 hardened
 try:
-    from fastapi import FastAPI, Depends, HTTPException, Request
-    from fastapi.middleware.cors import CORSMiddleware
-    from fastapi.responses import PlainTextResponse, JSONResponse
-    from pydantic import BaseModel
     import time
+
+    from fastapi import Depends, FastAPI, HTTPException, Request
+    from fastapi.middleware.cors import CORSMiddleware
+    from fastapi.responses import JSONResponse, PlainTextResponse
+    from pydantic import BaseModel
     # I import security
     try:
-        from ..security.auth import verify_api_key, require_role, rate_limit, redact
+        from ..security.auth import rate_limit, redact, require_role, verify_api_key
         _auth_enabled = True
     except Exception:
         _auth_enabled = False
@@ -37,7 +38,7 @@ try:
     # I add rate-limit + audit middleware
     @app.middleware("http")
     async def audit_middleware(request: Request, call_next):
-        start = time.time()
+        time.time()
         client_ip = request.client.host if request.client else "unknown"
         # I rate limit per IP
         if not rate_limit(f"ip:{client_ip}", rate=120, per_seconds=60):
@@ -47,7 +48,7 @@ try:
         try:
             response = await call_next(request)
             return response
-        except Exception as e:
+        except Exception:
             # I never leak stack traces in prod
             return JSONResponse({"detail":"Internal error – I logged it securely"}, status_code=500)
 
@@ -82,7 +83,7 @@ try:
             "detected_at":"2026-07-07T08:00:00Z"
         }]
         return redact({"incidents": sample, "total": len(sample), "principal": principal.get("sub") if principal else "dev"})
-    
+
     @app.get("/v1/targets", tags=["targets"])
     def list_targets(principal: dict = Depends(require_role("operator")) if _auth_enabled else None):
         return {"targets":[

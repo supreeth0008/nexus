@@ -1,6 +1,8 @@
-from .opa import OPAClient
-from ..models.incident import Incident
 from ..models.action import Action
+from ..models.incident import Incident
+from .opa import OPAClient
+
+
 # I am the policy gate – every autonomous action passes through me
 class PolicyGate:
     def __init__(self):

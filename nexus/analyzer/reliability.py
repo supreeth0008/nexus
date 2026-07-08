@@ -1,12 +1,14 @@
-from typing import List
+
+from ..models.incident import Incident, IncidentStatus, IncidentType, Severity
+from ..observe.models import ObserveResult
 from .base import Analyzer
 from .registry import register
-from ..observe.models import ObserveResult
-from ..models.incident import Incident, IncidentType, Severity, IncidentStatus
+
+
 @register("reliability")
 class ReliabilityAnalyzer(Analyzer):
     name="reliability"
-    def analyze(self, result: ObserveResult) -> List[Incident]:
+    def analyze(self, result: ObserveResult) -> list[Incident]:
         incidents=[]
         # error rate, crash loops, SLO burn
         error_signals = [s for s in result.signals if "error" in s.name.lower() or "5xx" in s.name.lower() or "fail" in s.name.lower()]

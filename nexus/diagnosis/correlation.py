@@ -1,6 +1,8 @@
 # I correlate anomalies across signals and time.
-from typing import List, Dict, Any
-def correlate_signals(signals: List[Any]) -> Dict[str, Any]:
+from typing import Any
+
+
+def correlate_signals(signals: list[Any]) -> dict[str, Any]:
     # I produce a simple correlation summary: count by severity, top offenders
     by_name = {}
     for s in signals:

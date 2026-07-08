@@ -1,11 +1,11 @@
-from typing import List, Dict
+
+from ...models.action import Action, ActionKind, ActionRisk
+from ...models.incident import Incident, IncidentType
 from ..base import Remediator
 from ..registry import register
-from ...models.incident import Incident, IncidentType
-from ...models.action import Action, ActionKind, ActionRisk
-import uuid
+
 # I generate OpenTofu HCL fixes from incident types using built-in templates.
-TEMPLATES: Dict[str, str] = {
+TEMPLATES: dict[str, str] = {
     "scale_up": '''
 # I generated this fix for scaling bottleneck – {incident_id}
 resource "aws_autoscaling_group" "app" {{
@@ -75,7 +75,7 @@ class OpenTofuRemediator(Remediator):
             "configuration_drift","compliance_drift","cost_spike",
             "performance_degradation","reliability_degradation"
         }
-    def generate(self, incident: Incident) -> List[Action]:
+    def generate(self, incident: Incident) -> list[Action]:
         # I choose a template based on incident type
         mapping = {
             IncidentType.scaling_bottleneck: "scale_up",

@@ -1,6 +1,8 @@
-from .github import GitHubClient, BranchManager
 from ..models.action import Action
 from ..models.incident import Incident
+from .github import BranchManager, GitHubClient
+
+
 # I orchestrate GitOps PR flow
 class GitOpsEngine:
     def __init__(self, github_token: str="", repo: str="supreeth0008/nexus"):

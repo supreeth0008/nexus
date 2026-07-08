@@ -1,12 +1,14 @@
-from typing import List
+
+from ..models.incident import Incident, IncidentStatus, IncidentType, Severity
+from ..observe.models import ObserveResult
 from .base import Analyzer
 from .registry import register
-from ..observe.models import ObserveResult
-from ..models.incident import Incident, IncidentType, Severity, IncidentStatus
+
+
 @register("security")
 class SecurityAnalyzer(Analyzer):
     name="security"
-    def analyze(self, result: ObserveResult) -> List[Incident]:
+    def analyze(self, result: ObserveResult) -> list[Incident]:
         incidents=[]
         # Heuristic: open ports, 0.0.0.0, public s3, etc.
         # Since observe signals are generic, I look for risky labels/values

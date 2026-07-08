@@ -1,6 +1,9 @@
+from pathlib import Path
+
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
-from pathlib import Path
+
+
 def get_engine(dsn:str)->Engine:
     if not dsn: raise ValueError("database DSN empty")
     if dsn.startswith("postgres://"): dsn=dsn.replace("postgres://","postgresql+psycopg2://",1)

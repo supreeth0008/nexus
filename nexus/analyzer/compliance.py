@@ -1,12 +1,14 @@
-from typing import List
+
+from ..models.incident import Incident, IncidentStatus, IncidentType, Severity
+from ..observe.models import ObserveResult
 from .base import Analyzer
 from .registry import register
-from ..observe.models import ObserveResult
-from ..models.incident import Incident, IncidentType, Severity, IncidentStatus
+
+
 @register("compliance")
 class ComplianceAnalyzer(Analyzer):
     name="compliance"
-    def analyze(self, result: ObserveResult) -> List[Incident]:
+    def analyze(self, result: ObserveResult) -> list[Incident]:
         incidents=[]
         # Tagging policy, region restrictions
         for s in result.signals:

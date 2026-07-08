@@ -1,5 +1,6 @@
-from .base import Analyzer
-from .registry import register, get_analyzers, list_registered
 # import to trigger registration
-from . import statistical, cost, security, reliability, compliance
+from . import compliance, cost, reliability, security, statistical
+from .base import Analyzer
+from .registry import get_analyzers, list_registered, register
+
 __all__=["Analyzer","register","get_analyzers","list_registered"]

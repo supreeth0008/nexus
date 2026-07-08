@@ -1,2 +1,3 @@
-from .generator import OpenTofuRemediator, TEMPLATES
+from .generator import TEMPLATES, OpenTofuRemediator
+
 __all__=["OpenTofuRemediator","TEMPLATES"]

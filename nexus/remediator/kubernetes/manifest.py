@@ -1,14 +1,16 @@
-from typing import List
+
+from ...models.action import Action, ActionKind, ActionRisk
+from ...models.incident import Incident
 from ..base import Remediator
 from ..registry import register
-from ...models.incident import Incident
-from ...models.action import Action, ActionKind, ActionRisk
+
+
 @register("kubernetes")
 class KubernetesRemediator(Remediator):
     name="kubernetes"
     def can_remediate(self, incident: Incident) -> bool:
         return True
-    def generate(self, incident: Incident) -> List[Action]:
+    def generate(self, incident: Incident) -> list[Action]:
         # I generate a K8s HPA / resources patch
         manifest = f"""---
 apiVersion: autoscaling/v2

@@ -1,14 +1,16 @@
-from typing import List
 import statistics
+
+from ..models.incident import Incident, IncidentStatus, IncidentType, Severity
+from ..observe.models import ObserveResult
 from .base import Analyzer
 from .registry import register
-from ..observe.models import ObserveResult
-from ..models.incident import Incident, IncidentType, Severity, IncidentStatus
+
+
 @register("statistical")
 class StatisticalAnalyzer(Analyzer):
     name = "statistical"
-    def analyze(self, result: ObserveResult) -> List[Incident]:
-        incidents: List[Incident] = []
+    def analyze(self, result: ObserveResult) -> list[Incident]:
+        incidents: list[Incident] = []
         # Collect numeric signals
         nums = [(s.name, float(s.value)) for s in result.signals if isinstance(s.value, (int,float))]
         if len(nums) < 3:

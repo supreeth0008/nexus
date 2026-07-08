@@ -1,10 +1,11 @@
-from typing import Dict, List, Type
+
 from .base import Remediator
-_registry: Dict[str, Type[Remediator]] = {}
+
+_registry: dict[str, type[Remediator]] = {}
 def register(name: str):
-    def deco(cls: Type[Remediator]):
+    def deco(cls: type[Remediator]):
         _registry[name] = cls
         return cls
     return deco
-def get_remediators() -> List[Remediator]:
+def get_remediators() -> list[Remediator]:
     return [cls() for cls in _registry.values()]

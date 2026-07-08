@@ -1,5 +1,8 @@
 from datetime import datetime
+
 from ..models.incident import Incident
+
+
 # I auto-generate runbooks from resolved incidents
 class RunbookGenerator:
     def generate(self, incident: Incident) -> str:

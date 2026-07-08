@@ -1,13 +1,15 @@
 from datetime import datetime
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 from uuid import uuid4
+
 from pydantic import BaseModel, Field
-class ActionKind(str, Enum):
+
+
+class ActionKind(StrEnum):
     opentofu="opentofu"; kubernetes="kubernetes"; helm="helm"
-class ActionRisk(str, Enum):
+class ActionRisk(StrEnum):
     low="low"; medium="medium"; high="high"
-class ActionStatus(str, Enum):
+class ActionStatus(StrEnum):
     proposed="proposed"; validated="validated"; applied="applied"; rejected="rejected"; rolled_back="rolled_back"
 class Action(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
@@ -19,4 +21,4 @@ class Action(BaseModel):
     status: ActionStatus=ActionStatus.proposed
     pr_url: str=""
     created_at: datetime=Field(default_factory=datetime.utcnow)
-    applied_at: Optional[datetime]=None
+    applied_at: datetime | None=None
