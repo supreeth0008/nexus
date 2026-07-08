@@ -1,38 +1,35 @@
+
 # Build artifacts
-/nexus-bin
-/nexus.exe
-coverage.out
-dist/
-build/
-*.egg-info/
-
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-.venv/
-pip-wheel-metadata/
-.pytest_cache/
-.ruff_cache/
-.mypy_cache/
-htmlcov/
-
-# Local configuration and secrets
-nexus.yaml
-*.env
-*.age
-
 # Editor and OS files
-.idea/
-.vscode/
+# Local configuration and secrets
+# Python
+# personal notes
+*$py.class
+*.age
+*.egg-info/
+*.env
+*.journal
+*.py[cod]
+*.so
 *.swp
 .DS_Store
-
-# personal notes
+.Python
+.idea/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.venv/
+.vscode/
+/nexus-bin
+/nexus.exe
+HANDOVER.md
 JOURNAL.md
-*.journal
-
+__pycache__/
+build/
+coverage.out
+dist/
+env/
+htmlcov/
+nexus.yaml
+pip-wheel-metadata/
+venv/
