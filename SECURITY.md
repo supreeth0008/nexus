@@ -40,4 +40,4 @@ I mitigate:
 - Data exfiltration → No credentials stored in DB, SOPS encryption at rest
 - Supply chain → Pinned versions, SBOM generation in CI
 
-See `docs/SECURITY.md` for full analysis.
+See `docs/SECURITY_MODEL.md` for full analysis.
