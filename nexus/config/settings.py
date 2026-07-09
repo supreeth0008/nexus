@@ -16,7 +16,9 @@ class AutonomyConfig(BaseModel):
 class DatabaseConfig(BaseModel):
     dsn: str=""
 class EngineConfig(BaseModel):
-    cycle_interval: str="5m"; http_port: int=Field(8080, ge=1, le=65535)
+    cycle_interval: str = "5m"
+    http_port: int = Field(8080, ge=1, le=65535)
+    policy_mode: str = "builtin"
 class TargetConfig(BaseModel):
     name: str; provider: str; endpoint: str; region: str=""
 class Settings(BaseModel):
@@ -42,7 +44,7 @@ def load_config(path: str | None=None) -> Settings:
     if Path(cfg_path).exists():
         with open(cfg_path) as f: data=yaml.safe_load(f) or {}
     # env overrides
-    mapping={"NEXUS_PROJECT_NAME":("project","name"),"NEXUS_AUTONOMY_LEVEL":("autonomy","level"),"NEXUS_DATABASE_DSN":("database","dsn"),"NEXUS_ENGINE_HTTP_PORT":("engine","http_port")}
+    mapping={"NEXUS_PROJECT_NAME":("project","name"),"NEXUS_AUTONOMY_LEVEL":("autonomy","level"),"NEXUS_DATABASE_DSN":("database","dsn"),"NEXUS_ENGINE_HTTP_PORT":("engine","http_port"),"NEXUS_ENGINE_POLICY_MODE":("engine","policy_mode")}
     for ek,kp in mapping.items():
         if ek in os.environ:
             cur=data
@@ -56,7 +58,19 @@ def load_config(path: str | None=None) -> Settings:
     validate_settings(s)
     return s
 def default_yaml(project_name: str) -> str:
-    return f"""project:\n  name: {project_name}\n  environment: dev\nautonomy:\n  level: 0\ndatabase:\n  dsn: ""\nengine:\n  cycle_interval: 5m\n  http_port: 8080\ntargets: []\n"""
+    return f"""project:
+  name: {project_name}
+  environment: dev
+autonomy:
+  level: 0
+database:
+  dsn: ""
+engine:
+  cycle_interval: 5m
+  http_port: 8080
+  policy_mode: builtin
+targets: []
+"""
 def redacted_dsn(dsn: str) -> str:
     if not dsn: return "(not configured)"
     try:
