@@ -2,7 +2,7 @@
 try:
     import time
 
-    from fastapi import Depends, FastAPI, HTTPException, Request
+    from fastapi import Depends, FastAPI, Request
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import JSONResponse, PlainTextResponse
     from pydantic import BaseModel
@@ -10,19 +10,18 @@ try:
     try:
         from ..security.auth import rate_limit, redact, require_role, verify_api_key
         _auth_enabled = True
-    except Exception:
-        _auth_enabled = False
-        def verify_api_key(): return {"sub":"anonymous","role":"admin"}
-        def require_role(r):
-            def _inner(principal= {"role":"admin"}): return principal
-            return _inner
-        def rate_limit(k,r=60,p=60): return True
-        def redact(x): return x
+    except Exception as exc:
+        raise RuntimeError(
+            "Failed to load nexus.security.auth; authentication is required."
+        ) from exc
 
     app = FastAPI(
         title="Nexus API",
         version="0.6.1",
-        description="I am the Nexus autonomous infrastructure control plane API – authenticated, audited, policy-gated",
+        description=(
+            "I am the Nexus autonomous infrastructure control plane API – "
+            "authenticated, audited, policy-gated"
+        ),
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json",
@@ -42,7 +41,10 @@ try:
         client_ip = request.client.host if request.client else "unknown"
         # I rate limit per IP
         if not rate_limit(f"ip:{client_ip}", rate=120, per_seconds=60):
-            return JSONResponse({"detail":"I throttled this client – rate limit exceeded"}, status_code=429)
+            return JSONResponse(
+                {"detail": "I throttled this client – rate limit exceeded"},
+                status_code=429,
+            )
         # I redact auth headers in logs
         # (structlog would go here – keeping stdlib for brevity)
         try:
@@ -68,8 +70,17 @@ try:
             return Depends(verify_api_key)
         return None
 
+    # Module-level dependency objects avoid B008 (function call in default arg).
+    _incident_principal_dep = Depends(verify_api_key) if _auth_enabled else None
+    _target_principal_dep = Depends(require_role("operator")) if _auth_enabled else None
+    _cycle_principal_dep = Depends(require_role("operator")) if _auth_enabled else None
+
     @app.get("/v1/incidents", tags=["incidents"])
-    def list_incidents(limit: int=20, status: str=None, principal: dict = Depends(verify_api_key) if _auth_enabled else None):
+    def list_incidents(
+        limit: int = 20,
+        status: str | None = None,
+        principal: dict | None = _incident_principal_dep,
+    ):
         # I would query DB – MVP returns safe sample, redacted
         sample = [{
             "id":"inc-2a9f41e1",
@@ -82,10 +93,14 @@ try:
             "mttr_seconds":47,
             "detected_at":"2026-07-07T08:00:00Z"
         }]
-        return redact({"incidents": sample, "total": len(sample), "principal": principal.get("sub") if principal else "dev"})
+        return redact({
+            "incidents": sample,
+            "total": len(sample),
+            "principal": principal.get("sub") if principal else "dev",
+        })
 
     @app.get("/v1/targets", tags=["targets"])
-    def list_targets(principal: dict = Depends(require_role("operator")) if _auth_enabled else None):
+    def list_targets(principal: dict | None = _target_principal_dep):
         return {"targets":[
             {"name":"demo-k8s","provider":"kubernetes","endpoint":"https://127.0.0.1:6443","status":"active"},
             {"name":"demo-aws","provider":"localstack","endpoint":"http://localhost:4566","status":"active"},
@@ -93,9 +108,14 @@ try:
         ]}
 
     @app.post("/v1/cycles", tags=["cycles"])
-    def trigger_cycle(principal: dict = Depends(require_role("operator")) if _auth_enabled else None):
+    def trigger_cycle(principal: dict | None = _cycle_principal_dep):
         # I would enqueue a real cycle – MVP simulates
-        return {"cycle_id":"cyc_"+ "f"*8, "status":"running", "trigger":"manual", "started_by": principal.get("sub") if principal else "api"}
+        return {
+            "cycle_id": "cyc_" + "f" * 8,
+            "status": "running",
+            "trigger": "manual",
+            "started_by": principal.get("sub") if principal else "api",
+        }
 
     @app.get("/v1/metrics", response_class=PlainTextResponse, tags=["ops"])
     def metrics():
@@ -130,7 +150,14 @@ nexus_fix_success_rate 0.82
         # I verify GitHub webhook HMAC – MVP accepts all with logging
         body = await request.body()
         # I would: sig = request.headers.get("X-Hub-Signature-256"); hmac.compare_digest(...)
-        return {"received": True, "bytes": len(body), "verified": "simulated – I enforce HMAC in production via NEXUS_GITHUB_WEBHOOK_SECRET"}
+        return {
+            "received": True,
+            "bytes": len(body),
+            "verified": (
+                "simulated – I enforce HMAC in production via "
+                "NEXUS_GITHUB_WEBHOOK_SECRET"
+            ),
+        }
 
 except ImportError:
     app = None
