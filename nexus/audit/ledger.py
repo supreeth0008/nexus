@@ -18,4 +18,13 @@ class AuditLedger:
         return "\n".join(json.dumps(e) for e in self.entries)
     def export_loki(self) -> list[dict]:
         # I format for Loki push API
-        return [{"stream": {"job":"nexus-audit","incident":e["incident_id"]}, "values": [[str(int(datetime.datetime.utcnow().timestamp()*1e9)), json.dumps(e)]]} for e in self.entries]
+        return [
+            {
+                "stream": {"job": "nexus-audit", "incident": e["incident_id"]},
+                "values": [[
+                    str(int(datetime.datetime.utcnow().timestamp() * 1e9)),
+                    json.dumps(e),
+                ]],
+            }
+            for e in self.entries
+        ]
