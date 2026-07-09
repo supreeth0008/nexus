@@ -45,7 +45,10 @@ class SecurityAnalyzer(Analyzer):
                 except Exception:
                     pass
         # Also degrade status = degraded/unreachable can imply security?
-        if result.status=="degraded" and any("auth" in sig.name.lower() or "tls" in sig.name.lower() for sig in result.signals):
+        if result.status == "degraded" and any(
+            "auth" in sig.name.lower() or "tls" in sig.name.lower()
+            for sig in result.signals
+        ):
             incidents.append(Incident(
                 type=IncidentType.security_drift,
                 severity=Severity.medium,
