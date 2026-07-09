@@ -6,9 +6,8 @@ I take security seriously in Nexus.
 
 | Version | Supported |
 | ------- | --------- |
-| 0.5.x   | yes |
-| 0.2.x   | yes |
-| <0.2    | no  |
+| 1.0.x   | yes |
+| <1.0    | no  |
 
 ## Reporting a Vulnerability
 
