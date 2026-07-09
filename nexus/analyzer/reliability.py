@@ -11,7 +11,12 @@ class ReliabilityAnalyzer(Analyzer):
     def analyze(self, result: ObserveResult) -> list[Incident]:
         incidents=[]
         # error rate, crash loops, SLO burn
-        error_signals = [s for s in result.signals if "error" in s.name.lower() or "5xx" in s.name.lower() or "fail" in s.name.lower()]
+        error_signals = [
+            s for s in result.signals
+            if "error" in s.name.lower()
+            or "5xx" in s.name.lower()
+            or "fail" in s.name.lower()
+        ]
         for s in error_signals:
             try:
                 v=float(s.value)
