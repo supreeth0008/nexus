@@ -12,7 +12,11 @@ class StatisticalAnalyzer(Analyzer):
     def analyze(self, result: ObserveResult) -> list[Incident]:
         incidents: list[Incident] = []
         # Collect numeric signals
-        nums = [(s.name, float(s.value)) for s in result.signals if isinstance(s.value, (int,float))]
+        nums = [
+            (s.name, float(s.value))
+            for s in result.signals
+            if isinstance(s.value, (int, float))
+        ]
         if len(nums) < 3:
             return incidents
         values = [v for _,v in nums]
