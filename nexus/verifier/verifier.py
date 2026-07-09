@@ -14,8 +14,10 @@ class Verifier:
         # I produce a plausible recovery check
         # Success rate improves with lower risk and higher confidence
         base_success = 0.85
-        if action.risk.value == "low": base_success += 0.1
-        if action.risk.value == "high": base_success -= 0.2
+        if action.risk.value == "low":
+            base_success += 0.1
+        if action.risk.value == "high":
+            base_success -= 0.2
         base_success += (incident.confidence * 0.1)
         success = random.random() < base_success
         # I return verification details
