@@ -14,6 +14,6 @@ def run_api(host: str="0.0.0.0", port: int=8080, reload: bool=False):
     except ImportError as e:
         print(f"I could not start API server – missing dependency: {e}")
         print("I recommend: pip install fastapi uvicorn")
-        raise SystemExit(1)
+        raise SystemExit(1) from None
 if __name__ == "__main__":
     run_api()
