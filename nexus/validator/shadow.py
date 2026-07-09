@@ -24,30 +24,58 @@ class ShadowValidator(Validator):
                     if tofu:
                         # I run init + validate (no backend)
                         try:
-                            subprocess.run([tofu, "fmt", "-check", td], capture_output=True, timeout=5, check=False)
+                            subprocess.run(
+                                [tofu, "fmt", "-check", td],
+                                capture_output=True,
+                                timeout=5,
+                                check=False,
+                            )
                             # I consider fmt warnings non-fatal
                         except Exception:
                             pass
                         # I run tofu validate if possible
                         try:
-                            subprocess.run([tofu, "init", "-backend=false"], cwd=td, capture_output=True, timeout=10, check=False)
-                            r = subprocess.run([tofu, "validate", "-json"], cwd=td, capture_output=True, timeout=10)
+                            subprocess.run(
+                                [tofu, "init", "-backend=false"],
+                                cwd=td,
+                                capture_output=True,
+                                timeout=10,
+                                check=False,
+                            )
+                            r = subprocess.run(
+                                [tofu, "validate", "-json"],
+                                cwd=td,
+                                capture_output=True,
+                                timeout=10,
+                            )
                             if r.returncode==0:
-                                return ValidationResult(True, "OpenTofu validate passed in shadow env")
+                                return ValidationResult(
+                                    True, "OpenTofu validate passed in shadow env"
+                                )
                         except Exception:
                             pass
                     # I fallback to heuristic: check for dangerous patterns
-                    dangerous = ["0.0.0.0/0", "delete", "destroy", "password", "secret"]
                     content = (action.diff or "").lower()
-                    [d for d in dangerous if d in content and "remove" not in content and "fix" in content or d=="0.0.0.0/0" and d in content]
                     # Actually allow 0.0.0.0/0 detection but we already fixed it, so:
                     if "0.0.0.0/0" in content and "10.0.0.0/8" not in content:
-                        return ValidationResult(False, "Shadow validator rejected: open CIDR still present", {"found":"0.0.0.0/0"})
-                    return ValidationResult(True, "Shadow validation passed (heuristic – tofu not installed or plan simulated)")
+                        return ValidationResult(
+                            False,
+                            "Shadow validator rejected: open CIDR still present",
+                            {"found": "0.0.0.0/0"},
+                        )
+                    return ValidationResult(
+                        True,
+                        (
+                            "Shadow validation passed "
+                            "(heuristic – tofu not installed or plan simulated)"
+                        ),
+                    )
                 elif action.kind == ActionKind.kubernetes:
                     # I do a basic YAML sanity check
                     if "apiVersion" in (action.diff or "") and "kind" in (action.diff or ""):
-                        return ValidationResult(True, "K8s manifest looks structurally valid (dry-run simulated)")
+                        return ValidationResult(
+                            True, "K8s manifest looks structurally valid (dry-run simulated)"
+                        )
                     return ValidationResult(False, "K8s manifest missing apiVersion/kind")
                 elif action.kind == ActionKind.helm:
                     # I check values.yaml basic structure
