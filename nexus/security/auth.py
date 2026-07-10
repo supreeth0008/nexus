@@ -2,9 +2,8 @@
 import hashlib
 import hmac
 import os
-import time
 import threading
-from typing import Dict
+import time
 
 from fastapi import HTTPException, Security, status
 from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
@@ -12,7 +11,12 @@ from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBea
 api_key_header = APIKeyHeader(name="X-Nexus-API-Key", auto_error=False)
 bearer_scheme = HTTPBearer(auto_error=False)
 
-def _allowed_keys() -> set:
+# Module-level Security objects avoid B008 (function call in default arg).
+_api_key_security = Security(api_key_header)
+_bearer_security = Security(bearer_scheme)
+
+
+def _allowed_keys() -> set[str]:
     keys = set()
     single = os.getenv("NEXUS_API_KEY", "")
     if single:
@@ -24,11 +28,18 @@ def _allowed_keys() -> set:
         keys.add("nexus-dev-key-change-me")
     return keys
 
-def verify_api_key(api_key: str | None = Security(api_key_header), bearer: HTTPAuthorizationCredentials | None = Security(bearer_scheme)):
+
+def verify_api_key(
+    api_key: str | None = _api_key_security,
+    bearer: HTTPAuthorizationCredentials | None = _bearer_security,
+):
     allowed = _allowed_keys()
     if not allowed:
         if os.getenv("NEXUS_ENV", "dev") == "prod":
-            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Authentication not configured")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Authentication not configured",
+            )
         return {"sub": "dev-anonymous", "role": "admin"}
     token = None
     if api_key:
@@ -36,37 +47,80 @@ def verify_api_key(api_key: str | None = Security(api_key_header), bearer: HTTPA
     elif bearer and bearer.credentials:
         token = bearer.credentials
     if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing credentials – I require X-Nexus-API-Key or Bearer token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing credentials – I require X-Nexus-API-Key or Bearer token",
+        )
     valid = any(hmac.compare_digest(token, k) for k in allowed)
     if not valid:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid API key")
-    role = "admin" if token.startswith("nx_admin") or token == "nexus-dev-key-change-me" else "operator"
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid API key",
+        )
+    role = (
+        "admin"
+        if token.startswith("nx_admin") or token == "nexus-dev-key-change-me"
+        else "operator"
+    )
     return {"sub": hashlib.sha256(token.encode()).hexdigest()[:16], "role": role}
+
+
+_verify_principal_security = Security(verify_api_key)
+
 
 def require_role(required: str):
     order = {"reader": 0, "operator": 1, "admin": 2}
-    def checker(principal: dict = Security(verify_api_key)):
+
+    def checker(principal: dict = _verify_principal_security):
         user_role = principal.get("role", "reader")
         if order.get(user_role, 0) < order.get(required, 0):
-            raise HTTPException(status_code=403, detail=f"I require role {required}, you are {user_role}")
+            raise HTTPException(
+                status_code=403,
+                detail=f"I require role {required}, you are {user_role}",
+            )
         return principal
+
     return checker
+
 
 def sign_audit(payload: str, secret: str | None = None) -> str:
     s: str = secret or os.getenv("NEXUS_AUDIT_HMAC_KEY") or "dev-audit-key-rotate-me"
     return hmac.new(s.encode(), payload.encode(), hashlib.sha256).hexdigest()
 
-REDACT_KEYS = {"password","secret","token","dsn","api_key","apikey","authorization","auth","private_key","client_secret"}
+
+REDACT_KEYS = {
+    "password",
+    "secret",
+    "token",
+    "dsn",
+    "api_key",
+    "apikey",
+    "authorization",
+    "auth",
+    "private_key",
+    "client_secret",
+}
+
 
 def redact(obj):
     if isinstance(obj, dict):
-        return {k: ("REDACTED" if k.lower() in REDACT_KEYS or any(r in k.lower() for r in REDACT_KEYS) else redact(v)) for k, v in obj.items()}
+        return {
+            k: (
+                "REDACTED"
+                if k.lower() in REDACT_KEYS
+                or any(r in k.lower() for r in REDACT_KEYS)
+                else redact(v)
+            )
+            for k, v in obj.items()
+        }
     if isinstance(obj, list):
         return [redact(x) for x in obj]
     return obj
 
-_buckets: Dict[str, Dict[str, float]] = {}
+
+_buckets: dict[str, dict[str, float]] = {}
 _lock = threading.Lock()
+
 
 def rate_limit(key: str, rate: int = 120, per_seconds: int = 60) -> bool:
     now = time.time()
