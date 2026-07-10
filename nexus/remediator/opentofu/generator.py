@@ -69,14 +69,17 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "enc" {{
 class OpenTofuRemediator(Remediator):
     name = "opentofu"
     def can_remediate(self, incident: Incident) -> bool:
-        # I can remediate most infra incidents via IaC
+        # I can remediate most infra incidents via IaC, except explicitly Kubernetes-native ones
+        provider = incident.metadata.get("target_provider", "")
+        if provider == "kubernetes":
+            return False
         return incident.type.value in {
             "scaling_bottleneck","resource_exhaustion","security_drift",
             "configuration_drift","compliance_drift","cost_spike",
             "performance_degradation","reliability_degradation"
         }
     def generate(self, incident: Incident) -> list[Action]:
-        # I choose a template based on incident type
+        # I choose a template based on incident type and metadata
         mapping = {
             IncidentType.scaling_bottleneck: "scale_up",
             IncidentType.resource_exhaustion: "resize_instance",
@@ -89,15 +92,23 @@ class OpenTofuRemediator(Remediator):
         }
         tpl_key = mapping.get(incident.type, "scale_up")
         tpl = TEMPLATES.get(tpl_key, TEMPLATES["scale_up"])
+        # I pull context from the incident
+        previous_type = incident.metadata.get("previous_instance_type", "t3.medium")
+        instance_type = incident.metadata.get("instance_type", "t3.large")
+        cluster = incident.metadata.get("cluster", "prod")
+        service = incident.metadata.get("service", "api")
+        bucket = incident.metadata.get("bucket", "app-data")
+        environment = incident.metadata.get("environment", "prod")
         # I render a simple diff
         rendered = tpl.format(
             incident_id=incident.id[:8],
+            root_cause=incident.root_cause or "auto-remediation",
             min_size=3, max_size=10, desired=5,
-            instance_type="t3.large",
-            previous_type="t3.medium",
-            environment="prod",
-            bucket="app-data",
-            cluster="prod", service="api"
+            instance_type=instance_type,
+            previous_type=previous_type,
+            environment=environment,
+            bucket=bucket,
+            cluster=cluster, service=service
         )
         diff = f"--- a/main.tf\n+++ b/main.tf\n@@\n+{rendered.replace(chr(10), chr(10)+'+')}\n"
         risk = ActionRisk.low
@@ -108,7 +119,10 @@ class OpenTofuRemediator(Remediator):
         action = Action(
             incident_id=incident.id,
             kind=ActionKind.opentofu,
-            summary=f"I generated OpenTofu fix for {incident.type.value}: {tpl_key}",
+            summary=(
+                f"I generated OpenTofu fix for {incident.type.value}: "
+                f"{tpl_key} ({incident.root_cause or 'no root cause'})"
+            ),
             diff=diff,
             risk=risk
         )
