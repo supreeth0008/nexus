@@ -8,16 +8,15 @@ if TYPE_CHECKING:
 
 app: FastAPI | None = None
 try:
-    import time
-
     from fastapi import Depends, FastAPI, Request
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import JSONResponse, PlainTextResponse
     from pydantic import BaseModel
 
-    # I import config, DB, and security
+    # I import config, DB, metrics, and security
     from ..config.settings import load_config
     from ..db import Database, IncidentStore
+    from ..utils.metrics import inc as metrics_inc
     try:
         from ..security.auth import rate_limit, redact, require_role, verify_api_key
         _auth_enabled = True
@@ -48,10 +47,14 @@ try:
     # I add rate-limit + audit middleware
     @app.middleware("http")
     async def audit_middleware(request: Request, call_next):
-        time.time()
         client_ip = request.client.host if request.client else "unknown"
+        endpoint = request.url.path
         # I rate limit per IP
         if not rate_limit(f"ip:{client_ip}", rate=120, per_seconds=60):
+            metrics_inc(
+                "nexus_api_requests_total",
+                labels={"endpoint": endpoint, "code": "429"},
+            )
             return JSONResponse(
                 {"detail": "I throttled this client – rate limit exceeded"},
                 status_code=429,
@@ -60,8 +63,16 @@ try:
         # (structlog would go here – keeping stdlib for brevity)
         try:
             response = await call_next(request)
+            metrics_inc(
+                "nexus_api_requests_total",
+                labels={"endpoint": endpoint, "code": str(response.status_code)},
+            )
             return response
         except Exception:
+            metrics_inc(
+                "nexus_api_requests_total",
+                labels={"endpoint": endpoint, "code": "500"},
+            )
             # I never leak stack traces in prod
             return JSONResponse({"detail":"Internal error – I logged it securely"}, status_code=500)
 
@@ -146,28 +157,9 @@ try:
         # I expose Prometheus metrics – authenticated in prod, open for scraping with bearer
         try:
             from ..utils.metrics import get_metrics_text
-            base = get_metrics_text()
+            return get_metrics_text()
         except Exception:
-            base = ""
-        # I add Phase 6 hardening metrics
-        extra = """
-# HELP nexus_api_requests_total API requests – I track these
-# TYPE nexus_api_requests_total counter
-nexus_api_requests_total{endpoint="/v1/incidents",code="200"} 127
-nexus_api_requests_total{endpoint="/v1/cycles",code="201"} 42
-# HELP nexus_policy_decisions_total Policy gate decisions – I audit these
-# TYPE nexus_policy_decisions_total counter
-nexus_policy_decisions_total{decision="allow"} 28
-nexus_policy_decisions_total{decision="deny"} 3
-nexus_policy_decisions_total{decision="require_approval"} 11
-# HELP nexus_mttr_seconds Mean time to recovery – I improve this
-# TYPE nexus_mttr_seconds gauge
-nexus_mttr_seconds 47
-# HELP nexus_fix_success_rate Fix success rate – I learn
-# TYPE nexus_fix_success_rate gauge
-nexus_fix_success_rate 0.82
-"""
-        return base + extra
+            return ""
 
     @app.post("/v1/webhook/github", tags=["integrations"])
     async def github_webhook(request: Request):
