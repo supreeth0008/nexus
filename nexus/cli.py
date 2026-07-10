@@ -366,7 +366,11 @@ try:
             console.print("[yellow]Errors:[/yellow]")
             for err in cyc.errors:
                 console.print(f"  - {err}")
-        duration = (cyc.completed_at - cyc.started_at).total_seconds()
+        duration = (
+            (cyc.completed_at - cyc.started_at).total_seconds()
+            if cyc.completed_at and cyc.started_at
+            else 0.0
+        )
         console.print(
             f"\n[green]Cycle completed in {duration:.1f}s – "
             f"{cyc.fixes_applied}/{cyc.incidents_detected} auto-resolved[/green]"
