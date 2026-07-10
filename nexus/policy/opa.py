@@ -17,8 +17,8 @@ class OPAClient:
 
     def __init__(self, mode: str | None = None):
         self.mode = mode or self._get_mode_from_config()
-        self._opa_binary = None
-        self._policy_path = None
+        self._opa_binary: str | None = None
+        self._policy_path: Path | None = None
         if self.mode == "opa":
             self._init_opa()
 
@@ -124,6 +124,13 @@ class OPAClient:
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(input_data, f)
             input_file = f.name
+
+        if self._opa_binary is None or self._policy_path is None:
+            return {
+                "decision": "deny",
+                "reason": "OPA client not initialized",
+                "autonomy_level": autonomy_level,
+            }
 
         try:
             cmd = [
