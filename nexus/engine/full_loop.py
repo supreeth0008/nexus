@@ -4,6 +4,7 @@ from ..analyzer.registry import get_analyzers
 from ..audit import AuditLedger
 from ..diagnosis.engine import DiagnosisEngine
 from ..gitops.gitops import GitOpsEngine
+from ..models.action import ActionStatus
 from ..models.cycle import Cycle, CycleStatus
 from ..models.incident import Incident, IncidentStatus
 from ..observe.runner import observe_all
@@ -88,7 +89,7 @@ class FullLoopEngine:
             if not v.valid:
                 inc.status = IncidentStatus.failed
                 continue
-            action.status = "validated"
+            action.status = ActionStatus.validated
             # Policy gate
             decision, reason = self.policy.evaluate(inc, action, autonomy)
             self.audit.append(inc.id, "policy", {"decision": decision, "reason": reason})
@@ -122,10 +123,10 @@ class FullLoopEngine:
                     if inc.can_transition(IncidentStatus.resolved):
                         inc.transition(IncidentStatus.resolved)
                     fixes_applied += 1
-                    action.status = "applied"
+                    action.status = ActionStatus.applied
                 else:
                     inc.status = IncidentStatus.failed
-                    action.status = "rejected"
+                    action.status = ActionStatus.rejected
         cycle.fixes_applied = fixes_applied
         cycle.completed_at = datetime.utcnow()
         cycle.status = CycleStatus.completed if not cycle.errors else CycleStatus.failed
