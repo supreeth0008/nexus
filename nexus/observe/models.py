@@ -1,12 +1,11 @@
 from datetime import datetime
-from typing import Any
 
 from pydantic import BaseModel, Field
 
 
 class Signal(BaseModel):
     name: str
-    value: float | str | dict[str, Any]
+    value: float | str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     labels: dict[str, str] = Field(default_factory=dict)
     severity: str = "info"
