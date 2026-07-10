@@ -19,22 +19,74 @@ class IncidentType(StrEnum):
     resource_exhaustion = "resource_exhaustion"
     error_burst = "error_burst"
     custom = "custom"
+
+
 class Severity(StrEnum):
-    critical = "critical"; high = "high"; medium = "medium"; low = "low"; info = "info"
+    critical = "critical"
+    high = "high"
+    medium = "medium"
+    low = "low"
+    info = "info"
+
+
 class IncidentStatus(StrEnum):
-    detected = "detected"; diagnosing = "diagnosing"; diagnosed = "diagnosed"; fixing = "fixing"; fix_ready = "fix_ready"; applying = "applying"; verifying = "verifying"; resolved = "resolved"; failed = "failed"; escalated = "escalated"
+    detected = "detected"
+    diagnosing = "diagnosing"
+    diagnosed = "diagnosed"
+    fixing = "fixing"
+    fix_ready = "fix_ready"
+    applying = "applying"
+    verifying = "verifying"
+    resolved = "resolved"
+    failed = "failed"
+    escalated = "escalated"
+
+
 VALID_TRANSITIONS: dict[IncidentStatus, list[IncidentStatus]] = {
-    IncidentStatus.detected: [IncidentStatus.diagnosing, IncidentStatus.failed, IncidentStatus.escalated],
-    IncidentStatus.diagnosing: [IncidentStatus.diagnosed, IncidentStatus.failed, IncidentStatus.escalated],
-    IncidentStatus.diagnosed: [IncidentStatus.fixing, IncidentStatus.failed, IncidentStatus.escalated],
-    IncidentStatus.fixing: [IncidentStatus.fix_ready, IncidentStatus.failed, IncidentStatus.escalated],
-    IncidentStatus.fix_ready: [IncidentStatus.applying, IncidentStatus.failed, IncidentStatus.escalated],
-    IncidentStatus.applying: [IncidentStatus.verifying, IncidentStatus.failed, IncidentStatus.escalated],
-    IncidentStatus.verifying: [IncidentStatus.resolved, IncidentStatus.failed, IncidentStatus.escalated],
+    IncidentStatus.detected: [
+        IncidentStatus.diagnosing,
+        IncidentStatus.failed,
+        IncidentStatus.escalated,
+    ],
+    IncidentStatus.diagnosing: [
+        IncidentStatus.diagnosed,
+        IncidentStatus.failed,
+        IncidentStatus.escalated,
+    ],
+    IncidentStatus.diagnosed: [
+        IncidentStatus.fixing,
+        IncidentStatus.failed,
+        IncidentStatus.escalated,
+    ],
+    IncidentStatus.fixing: [
+        IncidentStatus.fix_ready,
+        IncidentStatus.failed,
+        IncidentStatus.escalated,
+    ],
+    IncidentStatus.fix_ready: [
+        IncidentStatus.applying,
+        IncidentStatus.failed,
+        IncidentStatus.escalated,
+    ],
+    IncidentStatus.applying: [
+        IncidentStatus.verifying,
+        IncidentStatus.failed,
+        IncidentStatus.escalated,
+    ],
+    IncidentStatus.verifying: [
+        IncidentStatus.resolved,
+        IncidentStatus.failed,
+        IncidentStatus.escalated,
+    ],
     IncidentStatus.resolved: [],
     IncidentStatus.failed: [IncidentStatus.diagnosing],
-    IncidentStatus.escalated: [IncidentStatus.fix_ready, IncidentStatus.failed],
+    IncidentStatus.escalated: [
+        IncidentStatus.fix_ready,
+        IncidentStatus.failed,
+    ],
 }
+
+
 class Incident(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     type: IncidentType
@@ -59,16 +111,25 @@ class Incident(BaseModel):
     cycle_id: str = ""
     log: list[dict[str, Any]] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
+
     def can_transition(self, to: IncidentStatus) -> bool:
         return to in VALID_TRANSITIONS.get(self.status, [])
+
     def transition(self, to: IncidentStatus) -> None:
         if not self.can_transition(to):
-            raise ValueError(f"illegal status transition {self.status} -> {to} for incident {self.id}")
+            raise ValueError(
+                f"illegal status transition {self.status} -> {to} "
+                f"for incident {self.id}"
+            )
         self.status = to
         now = datetime.utcnow()
-        if to == IncidentStatus.diagnosed: self.diagnosed_at = now
-        elif to == IncidentStatus.fix_ready: self.fixed_at = now
-        elif to == IncidentStatus.verifying: self.verified_at = now
+        if to == IncidentStatus.diagnosed:
+            self.diagnosed_at = now
+        elif to == IncidentStatus.fix_ready:
+            self.fixed_at = now
+        elif to == IncidentStatus.verifying:
+            self.verified_at = now
         elif to == IncidentStatus.resolved:
             self.resolved_at = now
-            if self.detected_at: self.mttr_seconds = int((now - self.detected_at).total_seconds())
+            if self.detected_at:
+                self.mttr_seconds = int((now - self.detected_at).total_seconds())
