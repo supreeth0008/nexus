@@ -35,9 +35,9 @@ class ReliabilityAnalyzer(Analyzer):
                     ))
             except Exception:
                 pass
-        # pod crash / restart
+        # pod crash / restart / pending / image pull failures
         for s in result.signals:
-            if "restart" in s.name.lower() or "crash" in s.name.lower():
+            if any(k in s.name.lower() for k in ("restart", "crash", "pending", "image_pull_fail")):
                 try:
                     v=float(s.value)
                     if v>0:
@@ -48,7 +48,7 @@ class ReliabilityAnalyzer(Analyzer):
                             probe_id=f"{result.provider}-reliability",
                             target_id=result.target_name,
                             source_signal=s.name,
-                            root_cause="pod restarts detected",
+                            root_cause=f"{s.name} detected",
                             confidence=0.7
                         ))
                 except Exception:
