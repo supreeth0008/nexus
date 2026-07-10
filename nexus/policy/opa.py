@@ -1,11 +1,11 @@
-from typing import Any
 import json
 import subprocess
 from pathlib import Path
+from typing import Any
 
+from ..config.settings import load_config
 from ..models.action import Action
 from ..models.incident import Incident
-from ..config.settings import load_config
 
 
 class OPAClient:
@@ -36,7 +36,9 @@ class OPAClient:
                 self._opa_binary = candidate
                 break
         if not self._opa_binary:
-            raise RuntimeError("OPA binary not found in PATH. Install opa or set mode='builtin'")
+            raise RuntimeError(
+                "OPA binary not found in PATH. Install opa or set mode='builtin'"
+            )
 
         # Find policy file
         policy_path = Path(__file__).parent / "opa" / "policy.rego"
@@ -51,12 +53,16 @@ class OPAClient:
         except FileNotFoundError:
             return False
 
-    def evaluate(self, incident: Incident, action: Action, autonomy_level: int) -> dict[str, Any]:
+    def evaluate(
+        self, incident: Incident, action: Action, autonomy_level: int
+    ) -> dict[str, Any]:
         if self.mode == "opa":
             return self._eval_opa(incident, action, autonomy_level)
         return self._eval_builtin(incident, action, autonomy_level)
 
-    def _eval_builtin(self, incident: Incident, action: Action, autonomy_level: int) -> dict[str, Any]:
+    def _eval_builtin(
+        self, incident: Incident, action: Action, autonomy_level: int
+    ) -> dict[str, Any]:
         """Python rules engine mimicking Rego policy (default, no deps)."""
         decision = "deny"
         reason = ""
@@ -94,9 +100,15 @@ class OPAClient:
                 decision = "require_approval"
                 reason = "Critical severity escalated to human"
 
-        return {"decision": decision, "reason": reason, "autonomy_level": autonomy_level}
+        return {
+            "decision": decision,
+            "reason": reason,
+            "autonomy_level": autonomy_level,
+        }
 
-    def _eval_opa(self, incident: Incident, action: Action, autonomy_level: int) -> dict[str, Any]:
+    def _eval_opa(
+        self, incident: Incident, action: Action, autonomy_level: int
+    ) -> dict[str, Any]:
         """Evaluate policy using OPA binary and Rego policy."""
         input_data = {
             "autonomy_level": autonomy_level,
@@ -130,14 +142,26 @@ class OPAClient:
                 timeout=5,
             )
         except subprocess.TimeoutExpired:
-            return {"decision": "deny", "reason": "OPA evaluation timeout", "autonomy_level": autonomy_level}
+            return {
+                "decision": "deny",
+                "reason": "OPA evaluation timeout",
+                "autonomy_level": autonomy_level,
+            }
         except FileNotFoundError:
-            return {"decision": "deny", "reason": "OPA binary not found", "autonomy_level": autonomy_level}
+            return {
+                "decision": "deny",
+                "reason": "OPA binary not found",
+                "autonomy_level": autonomy_level,
+            }
         finally:
             Path(input_file).unlink(missing_ok=True)
 
         if result.returncode != 0:
-            return {"decision": "deny", "reason": f"OPA error: {result.stderr}", "autonomy_level": autonomy_level}
+            return {
+                "decision": "deny",
+                "reason": f"OPA error: {result.stderr}",
+                "autonomy_level": autonomy_level,
+            }
 
         try:
             output = json.loads(result.stdout)
@@ -153,4 +177,8 @@ class OPAClient:
         except (json.JSONDecodeError, IndexError, KeyError):
             pass
 
-        return {"decision": "deny", "reason": "OPA evaluation failed", "autonomy_level": autonomy_level}
+        return {
+            "decision": "deny",
+            "reason": "OPA evaluation failed",
+            "autonomy_level": autonomy_level,
+        }
