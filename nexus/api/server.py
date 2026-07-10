@@ -15,7 +15,7 @@ try:
 
     # I import config, DB, metrics, and security
     from ..config.settings import load_config
-    from ..db import Database, IncidentStore
+    from ..db import CycleStore, Database, IncidentStore
     from ..utils.metrics import inc as metrics_inc
     try:
         from ..security.auth import rate_limit, redact, require_role, verify_api_key
@@ -142,21 +142,57 @@ try:
 
     @app.get("/v1/targets", tags=["targets"])
     def list_targets(principal: dict | None = _target_principal_dep):
-        return {"targets":[
-            {"name":"demo-k8s","provider":"kubernetes","endpoint":"https://127.0.0.1:6443","status":"active"},
-            {"name":"demo-aws","provider":"localstack","endpoint":"http://localhost:4566","status":"active"},
-            {"name":"demo-prom","provider":"prometheus","endpoint":"http://localhost:9090","status":"active"}
-        ]}
+        cfg = load_config()
+        targets = [
+            {
+                "name": t.name,
+                "provider": t.provider,
+                "endpoint": t.endpoint,
+                "region": t.region,
+            }
+            for t in cfg.targets
+        ]
+        return redact({
+            "targets": targets,
+            "total": len(targets),
+            "principal": principal.get("sub") if principal else "dev",
+        })
 
-    @app.post("/v1/cycles", tags=["cycles"])
-    def trigger_cycle(principal: dict | None = _cycle_principal_dep):
-        # I would enqueue a real cycle – MVP simulates
-        return {
-            "cycle_id": "cyc_" + "f" * 8,
-            "status": "running",
-            "trigger": "manual",
-            "started_by": principal.get("sub") if principal else "api",
-        }
+    @app.get("/v1/cycles", tags=["cycles"])
+    def list_cycles(
+        limit: int = 20,
+        principal: dict | None = _cycle_principal_dep,
+    ):
+        cfg = load_config()
+        if not cfg.database.dsn:
+            return redact({
+                "cycles": [],
+                "total": 0,
+                "db_configured": False,
+                "principal": principal.get("sub") if principal else "dev",
+            })
+        try:
+            db = Database(cfg.database.dsn)
+            try:
+                sess = db.get_session()
+                try:
+                    store = CycleStore(sess)
+                    rows = store.list(limit=limit)
+                finally:
+                    sess.close()
+            finally:
+                db.close()
+            return redact({
+                "cycles": rows,
+                "total": len(rows),
+                "db_configured": True,
+                "principal": principal.get("sub") if principal else "dev",
+            })
+        except Exception as exc:
+            return JSONResponse(
+                {"detail": f"Database error: {exc}"},
+                status_code=503,
+            )
 
     @app.get("/v1/metrics", response_class=PlainTextResponse, tags=["ops"])
     def metrics():

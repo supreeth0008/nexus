@@ -119,3 +119,10 @@ class CycleStore:
             },
         )
         self.session.commit()
+
+    def list(self, limit=20):
+        result = self.session.execute(
+            text("SELECT * FROM cycles ORDER BY started_at DESC LIMIT :limit"),
+            {"limit": limit},
+        )
+        return [dict(row._mapping) for row in result]
