@@ -84,7 +84,13 @@ try:
 
     @app.get("/health", response_model=HealthResp, tags=["ops"])
     def health():
-        return {"status":"ok","service":"nexus","version":"0.6.1","autonomy_level":2}
+        cfg = load_config()
+        return {
+            "status": "ok",
+            "service": "nexus",
+            "version": "0.6.1",
+            "autonomy_level": cfg.autonomy.level,
+        }
 
     # I protect /v1/* with API key
     def auth_dep():
