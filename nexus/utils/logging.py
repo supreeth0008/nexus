@@ -2,6 +2,7 @@ import logging
 import sys
 
 import structlog
+from structlog.types import Processor
 
 
 def init_logger(level: str = "info", format: str = "text") -> None:
@@ -13,7 +14,7 @@ def init_logger(level: str = "info", format: str = "text") -> None:
         "error": logging.ERROR,
     }.get(level.lower(), logging.INFO)
     logging.basicConfig(format="%(message)s", stream=sys.stderr, level=lvl)
-    processors = [
+    processors: list[Processor] = [
         structlog.contextvars.merge_contextvars,
         structlog.stdlib.add_logger_name,
         structlog.stdlib.add_log_level,
