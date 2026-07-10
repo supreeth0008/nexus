@@ -163,16 +163,43 @@ try:
 
     @app.post("/v1/webhook/github", tags=["integrations"])
     async def github_webhook(request: Request):
-        # I verify GitHub webhook HMAC – MVP accepts all with logging
+        import hashlib
+        import hmac
+        import os
+
+        secret = os.getenv("NEXUS_GITHUB_WEBHOOK_SECRET", "")
+        if not secret:
+            return JSONResponse(
+                {"detail": "GitHub webhook secret not configured"},
+                status_code=401,
+            )
+
+        signature = request.headers.get("X-Hub-Signature-256", "")
+        if not signature:
+            return JSONResponse(
+                {"detail": "Missing X-Hub-Signature-256 header"},
+                status_code=401,
+            )
+
         body = await request.body()
-        # I would: sig = request.headers.get("X-Hub-Signature-256"); hmac.compare_digest(...)
+        expected = hmac.new(
+            secret.encode(),
+            body,
+            hashlib.sha256,
+        ).hexdigest()
+        prefix = "sha256="
+        if not signature.startswith(prefix) or not hmac.compare_digest(
+            signature[len(prefix):], expected
+        ):
+            return JSONResponse(
+                {"detail": "Invalid GitHub webhook signature"},
+                status_code=401,
+            )
+
         return {
             "received": True,
             "bytes": len(body),
-            "verified": (
-                "simulated – I enforce HMAC in production via "
-                "NEXUS_GITHUB_WEBHOOK_SECRET"
-            ),
+            "verified": "signature valid",
         }
 
 except ImportError:
