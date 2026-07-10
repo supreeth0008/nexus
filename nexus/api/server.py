@@ -14,7 +14,10 @@ try:
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import JSONResponse, PlainTextResponse
     from pydantic import BaseModel
-    # I import security
+
+    # I import config, DB, and security
+    from ..config.settings import load_config
+    from ..db import Database, IncidentStore
     try:
         from ..security.auth import rate_limit, redact, require_role, verify_api_key
         _auth_enabled = True
@@ -89,23 +92,36 @@ try:
         status: str | None = None,
         principal: dict | None = _incident_principal_dep,
     ):
-        # I would query DB – MVP returns safe sample, redacted
-        sample = [{
-            "id":"inc-2a9f41e1",
-            "type":"scaling_bottleneck",
-            "severity":"high",
-            "status":"resolved",
-            "target_id":"demo-k8s",
-            "root_cause":"HPA max replicas too low for current traffic",
-            "confidence":0.82,
-            "mttr_seconds":47,
-            "detected_at":"2026-07-07T08:00:00Z"
-        }]
-        return redact({
-            "incidents": sample,
-            "total": len(sample),
-            "principal": principal.get("sub") if principal else "dev",
-        })
+        cfg = load_config()
+        if not cfg.database.dsn:
+            return redact({
+                "incidents": [],
+                "total": 0,
+                "db_configured": False,
+                "principal": principal.get("sub") if principal else "dev",
+            })
+        try:
+            db = Database(cfg.database.dsn)
+            try:
+                sess = db.get_session()
+                try:
+                    store = IncidentStore(sess)
+                    rows = store.list(status=status, limit=limit)
+                finally:
+                    sess.close()
+            finally:
+                db.close()
+            return redact({
+                "incidents": rows,
+                "total": len(rows),
+                "db_configured": True,
+                "principal": principal.get("sub") if principal else "dev",
+            })
+        except Exception as exc:
+            return JSONResponse(
+                {"detail": f"Database error: {exc}"},
+                status_code=503,
+            )
 
     @app.get("/v1/targets", tags=["targets"])
     def list_targets(principal: dict | None = _target_principal_dep):
