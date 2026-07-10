@@ -5,6 +5,8 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.0.0-blue)](pyproject.toml)
 
+![Nexus capability demo](docs/demo.gif)
+
 Nexus is an **autonomous infrastructure control plane**. It observes cloud-native infrastructure, detects anomalies, diagnoses root causes, generates infrastructure-as-code fixes, validates them in shadow environments, applies them through GitOps pull requests, verifies recovery, and learns from every incident.
 
 ## Status: Phase 6 (Production Readiness) — v1.0.0 (2026-07-07)
