@@ -6,8 +6,12 @@ from ..models.action import Action
 
 
 class ValidationResult:
-    def __init__(self, valid: bool, message: str="", details: dict=None):
-        self.valid=valid; self.message=message; self.details=details or {}
+    def __init__(self, valid: bool, message: str = "", details: dict | None = None):
+        self.valid = valid
+        self.message = message
+        self.details = details or {}
+
+
 class Validator(ABC):
     @abstractmethod
     def validate(self, action: Action) -> ValidationResult: ...
