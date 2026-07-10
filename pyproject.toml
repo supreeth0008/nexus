@@ -21,6 +21,8 @@ dependencies = [
     "prometheus-client>=0.20",
     "rich>=13.7",
     "python-dotenv>=1.0",
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
 ]
 
 [project.optional-dependencies]
