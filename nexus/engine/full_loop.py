@@ -13,7 +13,8 @@ from ..validator import ShadowValidator
 from ..verifier import Verifier
 
 
-# I run the full closed loop: Observe → Detect → Diagnose → Generate → Validate → Apply → Verify → Document
+# I run the full closed loop:
+# Observe → Detect → Diagnose → Generate → Validate → Apply → Verify → Document
 class FullLoopEngine:
     def __init__(self, autonomy_level: int = 0):
         self.autonomy_level = autonomy_level
@@ -46,10 +47,14 @@ class FullLoopEngine:
             sigs = []
             for res in results:
                 if res.target_name == inc.target_id:
-                    sigs = res.signals; break
+                    sigs = res.signals
+                    break
             try:
                 self.diagnoser.diagnose(inc, sigs)
-                self.audit.append(inc.id, "diagnose", {"root_cause": inc.root_cause, "confidence": inc.confidence})
+                self.audit.append(
+                    inc.id, "diagnose",
+                    {"root_cause": inc.root_cause, "confidence": inc.confidence},
+                )
             except Exception as e:
                 cycle.errors.append(f"diagnose {inc.id}: {e}")
         cycle.diagnose_at = datetime.utcnow()
@@ -72,7 +77,10 @@ class FullLoopEngine:
                 continue
             action = actions[0]
             cycle.generate_at = datetime.utcnow()
-            self.audit.append(inc.id, "generate", {"action_id": action.id, "kind": action.kind.value})
+            self.audit.append(
+                inc.id, "generate",
+                {"action_id": action.id, "kind": action.kind.value},
+            )
             # Validate
             v = self.validator.validate(action)
             cycle.validate_at = datetime.utcnow()
