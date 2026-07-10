@@ -1,4 +1,12 @@
 # I expose Nexus via HTTP API – Phase 5/6 hardened
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from fastapi import FastAPI
+
+app: FastAPI | None = None
 try:
     import time
 
