@@ -64,7 +64,8 @@ def run_cycle(cfg: Settings, trigger: str="manual"):
             db.migrate()
             sess = db.get_session()
             try:
-                cs = CycleStore(sess); cs.create(cyc)
+                cs = CycleStore(sess)
+                cs.create(cyc)
                 istore = IncidentStore(sess)
                 for inc in incs:
                     inc.cycle_id = cyc.id
@@ -73,7 +74,8 @@ def run_cycle(cfg: Settings, trigger: str="manual"):
                     except Exception:
                         pass
             finally:
-                sess.close(); db.close()
+                sess.close()
+                db.close()
         except Exception:
             pass
     return cyc
