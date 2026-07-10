@@ -1,4 +1,4 @@
-from ..models.action import Action
+from ..models.action import Action, ActionStatus
 from ..models.incident import Incident
 from .github import BranchManager, GitHubClient
 
@@ -35,5 +35,5 @@ class GitOpsEngine:
         pr = self.gh.create_pr(branch, title, body)
         # I update action
         action.pr_url = pr["pr_url"]
-        action.status = "proposed"
+        action.status = ActionStatus.proposed
         return pr
