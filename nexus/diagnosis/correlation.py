@@ -4,7 +4,7 @@ from typing import Any
 
 def correlate_signals(signals: list[Any]) -> dict[str, Any]:
     # I produce a simple correlation summary: count by severity, top offenders
-    by_name = {}
+    by_name: dict[str, int] = {}
     for s in signals:
         name = getattr(s, "name", "unknown")
         by_name[name] = by_name.get(name, 0) + 1
