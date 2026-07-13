@@ -111,7 +111,7 @@ class FullLoopEngine:
                 inc.fix_generated = True
                 cycle.apply_at = datetime.utcnow()
                 # Verify
-                vr = self.verifier.verify(inc, action)
+                vr = self.verifier.verify(inc, action, cfg)
                 cycle.verify_at = datetime.utcnow()
                 self.audit.append(inc.id, "verify", vr)
                 if vr.get("verified"):
