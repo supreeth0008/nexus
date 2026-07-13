@@ -1,5 +1,5 @@
 # I serve the Nexus HTTP API – production ready
-def run_api(host: str="0.0.0.0", port: int=8080, reload: bool=False):
+def run_api(host: str="127.0.0.1", port: int=8080, reload: bool=False):
     # I try uvicorn, fallback gracefully
     try:
         import uvicorn

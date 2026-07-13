@@ -460,7 +460,7 @@ except Exception:
 @app.command("serve")
 def serve_api(
     ctx: typer.Context,
-    host: str = typer.Option("0.0.0.0", "--host", help="bind host"),
+    host: str = typer.Option("127.0.0.1", "--host", help="bind host"),
     port: int = typer.Option(None, "--port", "-p", help="override http port"),
     reload: bool = typer.Option(False, "--reload", help="dev auto-reload"),
 ):
