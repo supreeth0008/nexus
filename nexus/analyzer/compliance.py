@@ -1,8 +1,11 @@
 
 from ..models.incident import Incident, IncidentStatus, IncidentType, Severity
 from ..observe.models import ObserveResult
+from ..utils.logging import get_logger
 from .base import Analyzer
 from .registry import register
+
+logger = get_logger(__name__)
 
 
 @register("compliance")
@@ -28,7 +31,11 @@ class ComplianceAnalyzer(Analyzer):
                             confidence=0.65
                         ))
                 except Exception:
-                    pass
+                    logger.warning(
+                        "compliance_analyzer_failed_to_parse_signal",
+                        signal=s.name,
+                        value=s.value,
+                    )
             if "region" in n and "forbidden" in n:
                 incidents.append(Incident(
                     type=IncidentType.compliance_drift,

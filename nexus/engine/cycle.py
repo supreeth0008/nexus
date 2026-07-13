@@ -6,6 +6,9 @@ from ..diagnosis.engine import DiagnosisEngine
 from ..models.cycle import Cycle, CycleStatus
 from ..models.incident import Incident
 from ..observe.runner import observe_all
+from ..utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 # I run one full observe -> detect -> diagnose cycle
@@ -72,10 +75,14 @@ def run_cycle(cfg: Settings, trigger: str="manual"):
                     try:
                         istore.create(inc)
                     except Exception:
-                        pass
+                        logger.warning(
+                            "cycle_runner_failed_to_persist_incident",
+                            incident_id=inc.id,
+                            incident_type=inc.type.value,
+                        )
             finally:
                 sess.close()
                 db.close()
         except Exception:
-            pass
+            logger.warning("cycle_runner_failed_to_persist_cycle", cycle_id=cyc.id)
     return cyc

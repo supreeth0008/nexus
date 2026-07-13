@@ -1,8 +1,11 @@
 
 from ..models.incident import Incident, IncidentStatus, IncidentType, Severity
 from ..observe.models import ObserveResult
+from ..utils.logging import get_logger
 from .base import Analyzer
 from .registry import register
+
+logger = get_logger(__name__)
 
 
 @register("cost")
@@ -32,5 +35,9 @@ class CostAnalyzer(Analyzer):
                                 metadata={"cost_value":v}
                             ))
                 except Exception:
-                    pass
+                    logger.warning(
+                        "cost_analyzer_failed_to_parse_signal",
+                        signal=s.name,
+                        value=s.value,
+                    )
         return incidents

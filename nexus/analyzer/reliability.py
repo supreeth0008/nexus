@@ -1,8 +1,11 @@
 
 from ..models.incident import Incident, IncidentStatus, IncidentType, Severity
 from ..observe.models import ObserveResult
+from ..utils.logging import get_logger
 from .base import Analyzer
 from .registry import register
+
+logger = get_logger(__name__)
 
 
 @register("reliability")
@@ -34,7 +37,11 @@ class ReliabilityAnalyzer(Analyzer):
                         metadata={"error_value":v}
                     ))
             except Exception:
-                pass
+                logger.warning(
+                    "reliability_analyzer_failed_to_parse_error_signal",
+                    signal=s.name,
+                    value=s.value,
+                )
         # pod crash / restart / pending / image pull failures
         for s in result.signals:
             if any(k in s.name.lower() for k in ("restart", "crash", "pending", "image_pull_fail")):
@@ -52,7 +59,11 @@ class ReliabilityAnalyzer(Analyzer):
                             confidence=0.7
                         ))
                 except Exception:
-                    pass
+                    logger.warning(
+                        "reliability_analyzer_failed_to_parse_restart_signal",
+                        signal=s.name,
+                        value=s.value,
+                    )
         # latency SLO
         for s in result.signals:
             if "latency" in s.name.lower() or "p95" in s.name.lower() or "p99" in s.name.lower():
@@ -70,5 +81,9 @@ class ReliabilityAnalyzer(Analyzer):
                             confidence=0.8
                         ))
                 except Exception:
-                    pass
+                    logger.warning(
+                        "reliability_analyzer_failed_to_parse_latency_signal",
+                        signal=s.name,
+                        value=s.value,
+                    )
         return incidents

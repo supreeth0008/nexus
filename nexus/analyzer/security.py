@@ -1,8 +1,11 @@
 
 from ..models.incident import Incident, IncidentStatus, IncidentType, Severity
 from ..observe.models import ObserveResult
+from ..utils.logging import get_logger
 from .base import Analyzer
 from .registry import register
+
+logger = get_logger(__name__)
 
 
 @register("security")
@@ -43,7 +46,11 @@ class SecurityAnalyzer(Analyzer):
                             confidence=0.8
                         ))
                 except Exception:
-                    pass
+                    logger.warning(
+                        "security_analyzer_failed_to_parse_encryption_signal",
+                        signal=s.name,
+                        value=s.value,
+                    )
         # Also degrade status = degraded/unreachable can imply security?
         if result.status == "degraded" and any(
             "auth" in sig.name.lower() or "tls" in sig.name.lower()

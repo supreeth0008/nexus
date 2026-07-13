@@ -5,11 +5,12 @@ from rich.console import Console
 from rich.table import Table
 
 from .config.settings import default_yaml, load_config, redacted_dsn
-from .utils.logging import init_logger
+from .utils.logging import get_logger, init_logger
 from .utils.version import build_info
 
 app = typer.Typer(help="Nexus is an autonomous infrastructure control plane", no_args_is_help=True)
 console = Console()
+logger = get_logger(__name__)
 
 
 @app.callback()
@@ -242,7 +243,10 @@ try:
                     sess.close()
                     db.close()
         except Exception:
-            pass
+            logger.warning(
+                "cli_fix_generate_failed_to_load_incident_from_db",
+                incident_id=incident_id,
+            )
         if inc is None:
             # I synthesize a demo incident
             inc = Incident(
@@ -306,7 +310,7 @@ try:
                     console.print(f"  details: {res.details}")
 except Exception:
     # I avoid breaking CLI load if Phase 3 modules fail
-    pass
+    logger.warning("cli_phase3_fix_commands_unavailable")
 
 
 # Phase 4 full closed loop
@@ -376,7 +380,7 @@ try:
             f"{cyc.fixes_applied}/{cyc.incidents_detected} auto-resolved[/green]"
         )
 except Exception:
-    pass
+    logger.warning("cli_phase4_run_command_unavailable")
 
 
 # Phase 5 Learn + Dashboard
@@ -398,7 +402,7 @@ try:
             try:
                 webbrowser.open(f"http://localhost:{port}")
             except Exception:
-                pass
+                logger.warning("cli_dashboard_failed_to_open_browser", port=port)
         else:
             console.print("[yellow]Web UI source not found – Phase 5 placeholder[/yellow]")
         # I also show metrics
@@ -407,7 +411,7 @@ try:
             console.print("\n[bold]Nexus self-metrics:[/bold]")
             console.print(get_metrics_text())
         except Exception:
-            pass
+            logger.warning("cli_dashboard_failed_to_render_metrics")
 
     learn_app = typer.Typer(help="Learning engine")
     app.add_typer(learn_app, name="learn")
@@ -453,7 +457,7 @@ try:
         rb = RunbookGenerator().generate(inc)
         console.print(rb)
 except Exception:
-    pass
+    logger.warning("cli_phase5_learn_dashboard_unavailable")
 
 
 # I add a production API serve command – Phase 6 hardening

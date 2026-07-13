@@ -4,7 +4,10 @@ import subprocess
 import tempfile
 
 from ..models.action import Action, ActionKind
+from ..utils.logging import get_logger
 from .base import ValidationResult, Validator
+
+logger = get_logger(__name__)
 
 
 # I validate fixes in an isolated shadow environment
@@ -32,7 +35,10 @@ class ShadowValidator(Validator):
                             )
                             # I consider fmt warnings non-fatal
                         except Exception:
-                            pass
+                            logger.warning(
+                                "shadow_validator_tofu_fmt_failed",
+                                action_kind=action.kind.value,
+                            )
                         # I run tofu validate if possible
                         try:
                             subprocess.run(
@@ -53,7 +59,10 @@ class ShadowValidator(Validator):
                                     True, "OpenTofu validate passed in shadow env"
                                 )
                         except Exception:
-                            pass
+                            logger.warning(
+                                "shadow_validator_tofu_validate_failed",
+                                action_kind=action.kind.value,
+                            )
                     # I fallback to heuristic: check for dangerous patterns
                     content = (action.diff or "").lower()
                     # Actually allow 0.0.0.0/0 detection but we already fixed it, so:
