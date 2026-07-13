@@ -24,8 +24,6 @@ def _allowed_keys() -> set[str]:
     multi = os.getenv("NEXUS_API_KEYS", "")
     if multi:
         keys.update([k.strip() for k in multi.split(",") if k.strip()])
-    if not keys and os.getenv("NEXUS_ENV", "dev") == "dev":
-        keys.add("nexus-dev-key-change-me")
     return keys
 
 
@@ -57,11 +55,7 @@ def verify_api_key(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid API key",
         )
-    role = (
-        "admin"
-        if token.startswith("nx_admin") or token == "nexus-dev-key-change-me"
-        else "operator"
-    )
+    role = "admin" if token.startswith("nx_admin") else "operator"
     return {"sub": hashlib.sha256(token.encode()).hexdigest()[:16], "role": role}
 
 
