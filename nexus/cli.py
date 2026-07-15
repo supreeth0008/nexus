@@ -125,6 +125,14 @@ def detect_cmd(
         from .observe.runner import run_cycle as old_run
         cyc = old_run(cfg, "manual")
         incs = []
+    # Persist detected incidents to the lightweight local store so
+    # `nexus fix generate <id>` can look them up without Postgres.
+    if incs:
+        from .db.local import LocalIncidentStore
+        store = LocalIncidentStore()
+        for inc in incs:
+            inc.cycle_id = cyc.id
+            store.create(inc)
     table = Table(title=f"Detected Incidents: {len(incs)}")
     table.add_column("ID")
     table.add_column("Type")
@@ -221,15 +229,16 @@ try:
     @fix_app.command("generate")
     def fix_generate(
         incident_id: str = typer.Argument(..., help="Incident ID, or 'demo' for synthetic"),
-        kind: str = typer.Option("opentofu", "--kind", help="opentofu|kubernetes|helm"),
+        kind: str | None = typer.Option(None, "--kind", help="opentofu|kubernetes|helm"),
     ):
         """Generate a fix for an incident (Phase 3)"""
         from .models.incident import Incident, IncidentStatus, IncidentType, Severity
         from .remediator.registry import get_remediators
-        # I load incident from DB if possible, else synthesize
+        # I load incident from DB if configured, otherwise from the local
+        # SQLite store populated by `nexus detect`. If it is not found,
+        # fail loudly instead of silently substituting a fake incident.
         inc = None
         try:
-            # try DB
             from .config.settings import load_config
             cfg = load_config(None)
             if cfg.database.dsn:
@@ -242,15 +251,25 @@ try:
                 finally:
                     sess.close()
                     db.close()
+            else:
+                from .db.local import LocalIncidentStore
+                inc = LocalIncidentStore().get(incident_id)
         except Exception:
             logger.warning(
-                "cli_fix_generate_failed_to_load_incident_from_db",
+                "cli_fix_generate_failed_to_load_incident",
                 incident_id=incident_id,
             )
+            raise
         if inc is None:
-            # I synthesize a demo incident
+            console.print(
+                f"[red]Incident {incident_id} not found. "
+                "Run 'nexus detect' first to populate the local store.[/red]"
+            )
+            raise typer.Exit(1)
+        if incident_id == "demo":
+            # Preserve the explicit demo helper when the literal 'demo' ID is used.
             inc = Incident(
-                id=incident_id if incident_id != "demo" else "demo-inc-001",
+                id="demo-inc-001",
                 type=IncidentType.scaling_bottleneck,
                 severity=Severity.high,
                 status=IncidentStatus.diagnosed,
@@ -259,8 +278,12 @@ try:
                 confidence=0.8,
             )
         rems = get_remediators()
-        # I filter by kind if requested
-        selected = [r for r in rems if kind.lower() in r.name.lower()] or rems
+        # I filter by kind if requested; otherwise let remediators self-select.
+        selected = (
+            [r for r in rems if kind.lower() in r.name.lower()]
+            if kind
+            else rems
+        )
         actions = []
         for rm in selected:
             try:
