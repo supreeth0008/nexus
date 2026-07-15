@@ -42,6 +42,18 @@ class ReliabilityAnalyzer(Analyzer):
                     signal=s.name,
                     value=s.value,
                 )
+        def _metadata_from_signal(s):
+            md = dict(s.labels)
+            md.setdefault("target_provider", "kubernetes")
+            cpu = md.pop("resource_requests_cpu", "")
+            memory = md.pop("resource_requests_memory", "")
+            if cpu or memory:
+                md["resource_requests"] = {
+                    "cpu": cpu,
+                    "memory": memory,
+                }
+            return md
+
         # pod crash / restart / pending / image pull failures
         for s in result.signals:
             if any(k in s.name.lower() for k in ("restart", "crash", "pending", "image_pull_fail")):
@@ -56,7 +68,8 @@ class ReliabilityAnalyzer(Analyzer):
                             target_id=result.target_name,
                             source_signal=s.name,
                             root_cause=f"{s.name} detected",
-                            confidence=0.7
+                            confidence=0.7,
+                            metadata=_metadata_from_signal(s),
                         ))
                 except Exception:
                     logger.warning(
