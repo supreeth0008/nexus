@@ -19,6 +19,16 @@ class GitHubClient:
             "X-GitHub-Api-Version": "2022-11-28",
         }
 
+    def _create_blob(self, content: str) -> dict[str, Any]:
+        return self._request(
+            "POST",
+            f"/repos/{self.repo}/git/blobs",
+            {
+                "content": base64.b64encode(content.encode()).decode(),
+                "encoding": "base64",
+            },
+        )
+
     def _request(self, method: str, path: str, json_data: dict | None = None) -> dict[str, Any]:
         url = f"{self.base_url}{path}"
         with httpx.Client(timeout=30.0) as client:
@@ -32,7 +42,15 @@ class GitHubClient:
         data: dict[str, Any] = resp.json()
         return data
 
-    def create_pr(self, branch: str, title: str, body: str, base: str = "main") -> dict[str, Any]:
+    def create_pr(
+        self,
+        branch: str,
+        title: str,
+        body: str,
+        fix_path: str,
+        fix_content: str,
+        base: str = "main",
+    ) -> dict[str, Any]:
         if not self.token:
             raise RuntimeError("NEXUS_GITHUB_TOKEN not configured; cannot create real PR")
 
@@ -40,24 +58,16 @@ class GitHubClient:
         ref_data = self._request("GET", f"/repos/{self.repo}/git/ref/heads/{base}")
         base_sha = ref_data["object"]["sha"]
 
-        # 2. Create blob with the fix content embedded in the PR body
-        file_content = body
-        blob_data = self._request(
-            "POST",
-            f"/repos/{self.repo}/git/blobs",
-            {
-                "content": base64.b64encode(file_content.encode()).decode(),
-                "encoding": "base64",
-            },
-        )
+        # 2. Create blobs for the real fix file and the human-readable summary
+        fix_blob = self._create_blob(fix_content)
+        summary_blob = self._create_blob(body)
 
         # 3. Get current tree
         base_commit = self._request("GET", f"/repos/{self.repo}/git/commits/{base_sha}")
         base_tree_sha = base_commit["tree"]["sha"]
 
-        # 4. Create tree with the fix file
-        safe_branch = branch.replace("/", "-")
-        file_path = f"nexus-auto-fix-{safe_branch}.md"
+        # 4. Create tree with both files
+        summary_path = f"nexus-auto-fix-{branch.replace('/', '-')}.md"
         tree_data = self._request(
             "POST",
             f"/repos/{self.repo}/git/trees",
@@ -65,11 +75,17 @@ class GitHubClient:
                 "base_tree": base_tree_sha,
                 "tree": [
                     {
-                        "path": file_path,
+                        "path": fix_path,
                         "mode": "100644",
                         "type": "blob",
-                        "sha": blob_data["sha"],
-                    }
+                        "sha": fix_blob["sha"],
+                    },
+                    {
+                        "path": summary_path,
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": summary_blob["sha"],
+                    },
                 ],
             },
         )
